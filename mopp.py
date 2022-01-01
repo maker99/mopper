@@ -168,7 +168,7 @@ def mopp(speed, str, protocol=PROT_V1):
 
     m = protocol				            # protocol        2 bit
     m += bin(serialNumber)[2:].zfill(6)   # serial number   6 bit
-    m += bin(speed)[2:].zfill(6)   # speed           6 bit
+    m += bin(int(speed))[2:].zfill(6)   # speed           6 bit
 
     for c in str:
         if c == " ":
@@ -227,7 +227,7 @@ def splitmessage(msg):
     return (protocol, serial_number, speed, data)
 
 
-def get_message(msg, do_debug):
+def get_message(input_bytes):
     """ get data from a mopp message:
         speed, text, protocol and serial number
     """
@@ -237,20 +237,19 @@ def get_message(msg, do_debug):
     speed = int(b_speed, 2)
     message_text = binstring2msg(b_data)
 
-    if do_debug == True:
-        debug('==============')
-        debug('%s > "%s" -> %s' %
-              (client, bytes2bin(input_bytes), input_bytes.hex(':')))
-        debug('--- Header ---')
-        debug('%s             = protocol version: %s' %
-              (b_protocol, int(b_protocol, 2)))
-        debug('  %s       = serial number   : %s' %
-              (b_serial_number, int(b_serial_number, 2)))
-        debug('        %s = speed           : %s wpm' %
-              (b_speed, int(b_speed, 2)))
-        debug('--- Data ---')
-        debug('%s = "%s"' % (b_data, message_text))
-        debug('==============')
+    debug('==============')
+    debug('"%s" -> %s' %
+            (bytes2bin(input_bytes), input_bytes.hex(':')))
+    debug('--- Header ---')
+    debug('%s             = protocol version: %s' %
+            (b_protocol, int(b_protocol, 2)))
+    debug('  %s       = serial number   : %s' %
+            (b_serial_number, int(b_serial_number, 2)))
+    debug('        %s = speed           : %s wpm' %
+            (b_speed, int(b_speed, 2)))
+    debug('--- Data ---')
+    debug('%s = "%s"' % (b_data, message_text))
+    debug('==============')
 
     return (speed, message_text, b_protocol, b_serial_number)
 
@@ -265,6 +264,7 @@ def morse2char(morseChar):
     for c, m in morseCodes.items():
         if morseChar == m:
             char = c
+            break
     return char
 
 

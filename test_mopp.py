@@ -37,3 +37,13 @@ def test_special():
     assert '*' == binstring2msg('101010101010')
     assert '' == binstring2msg('1111101')
     assert 'en' == binstring2msg('01000010011')
+
+test_messages
+print()
+assert smessage('abc')[3] == '01100010010101001001100111'
+assert binstring2msg(smessage('abc')[3]) == 'abc'
+assert string2stringmessage('abc') == 'abc'
+assert string2stringmessage('>') == ''
+print ("%s -> %s" %('A@C',string2stringmessage('A@C')))
+assert string2stringmessage('A@C') == 'A@c'
+assert string2stringmessage('C"') == 'c'

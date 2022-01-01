@@ -19,10 +19,8 @@ MAX_CLIENTS = 10
 KEEPALIVE = 10
 DEBUG = 1
 
-serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-serversock.bind((SERVER_IP, UDP_PORT))
-serversock.settimeout(KEEPALIVE)
-debug("Server started, listening on %s:%s" % (SERVER_IP, UDP_PORT))
+
+
 
 receivers = {}
 receivers_speed = {}
@@ -39,7 +37,7 @@ def send_text_to_client(client, speed, text_message):
     """send a text to a mopp client 
     """
 
-    debug('%s, < "%s"' % (client, text_message))
+    debug('%s, < "%s"(%s wpm)' % (client, text_message, speed))
     for word in text_message.split(' '):
         sendto_serversock(mopp(speed, word), client)
 
@@ -80,55 +78,69 @@ def enroll_new_client(client, speed):
         debug("ERR: maximum clients reached")
 
 
-while KeyboardInterrupt:
-    time.sleep(0.2)						# anti flood
+if __name__ == "__main__":
+    # connect to local hosts port 7373
     try:
-        input_bytes, addr = serversock.recvfrom(64)
+        serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        serversock.bind((SERVER_IP, UDP_PORT))
+    except:
+        print ("error: Port %s is already in use, maybe an earlier chatServer?" % (UDP_PORT))
+        print ("try: ps xwww | grep -i chatserver" )
+        exit(-1)
+        
+    serversock.settimeout(KEEPALIVE)
+    debug("Server started, listening on %s:%s" % (SERVER_IP, UDP_PORT))
 
-        client = addr[0] + ':' + str(addr[1])
+    while KeyboardInterrupt:
+        time.sleep(0.2)						# anti flood
+        try:
+            input_bytes, addr = serversock.recvfrom(64)
 
-        (message_text, speed, b_protocol, b_serial_number) = get_message(input_bytes)
+            client = addr[0] + ':' + str(addr[1])
 
-        if client in receivers:
-            if (message_text == ':bye') or (message_text == '<sk>'):
-                #   if stripheader(input_data) == stripheader(mopp(20, ':bye')):
-                debug("%s, removing client on request" % client)
-                send_text_to_client(client, speed, 'bye K e e')
-                del receivers[client]
-                del receivers_speed[client]
+            (speed, message_text, b_protocol, b_serial_number) = \
+            get_message(input_bytes)
+
+            if client in receivers:
+                if (message_text == ':bye') or (message_text == '<sk>'):
+                    #   if stripheader(input_data) == stripheader(mopp(20, ':bye')):
+                    debug("%s, removing client on request" % client)
+                    send_text_to_client(client, speed, 'bye K e e')
+                    del receivers[client]
+                    del receivers_speed[client]
+                else:
+                    # broadcast this message to everyone else
+                    broadcast(input_bytes, client)
+                    receivers[client] = time.time()
             else:
-                # broadcast this message to everyone else
-                broadcast(input_bytes, client)
-                receivers[client] = time.time()
-        else:
-            if (message_text == 'k') or (message_text == 'hi'):
-                enroll_new_client(client, speed)
-            else:
-                send_text_to_client(client, speed, '?')
-                debug("%s, is unknown client, ignoring" % client)
+                if (message_text == 'k') or (message_text == 'hi'):
+                    enroll_new_client(client, speed)
+                else:
+                    send_text_to_client(client, speed, '?')
+                    debug("%s, is unknown client, ignoring" % client)
 
-    except socket.timeout:
-        # Send UDP keepalives
-        for c in receivers.keys():
-            ip, port = c.split(':')
-            debug("%s, Timeout and renewing" % c)
-            serversock.sendto(b'', (ip, int(port)))
-            # serversock.sendto(mopp(speed,'ee' ), (ip, int(port)))
-        pass
+        except socket.timeout:
+            # Send UDP keepalives
+            for c in receivers.keys():
+                ip, port = c.split(':')
+                debug("%s, Timeout and renewing" % c)
+                serversock.sendto(b'', (ip, int(port)))
+                # serversock.sendto(mopp(speed,'ee' ), (ip, int(port)))
+            pass
 
-    # except (KeyboardInterrupt, SystemExit):
-    except ():
-        serversock.close()
-        break
+        # except (KeyboardInterrupt, SystemExit):
+        except ():
+            serversock.close()
+            break
 
-    # clean clients list
-    clients_to_be_removed = []
-    for c in receivers.items():
-        if c[1] + CLIENT_TIMEOUT < time.time():
-            clients_to_be_removed.append(c[0])
+        # clean clients list
+        clients_to_be_removed = []
+        for c in receivers.items():
+            if c[1] + CLIENT_TIMEOUT < time.time():
+                clients_to_be_removed.append(c[0])
 
-    for client in clients_to_be_removed:
-        debug("%s, removing expired client" % client)
-        send_text_to_client(client, receivers_speed[client], 'bye K e e')
-        del receivers[client]
-        del receivers_speed[client]
+        for client in clients_to_be_removed:
+            debug("%s, removing expired client" % client)
+            send_text_to_client(client, receivers_speed[client], 'bye K e e')
+            del receivers[client]
+            del receivers_speed[client]
