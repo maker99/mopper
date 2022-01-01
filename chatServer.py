@@ -129,7 +129,7 @@ if __name__ == "__main__":
             pass
 
         # except (KeyboardInterrupt, SystemExit):
-        except ():
+        except:
             serversock.close()
             break
 
