@@ -1,12 +1,17 @@
 #!/usr/local/bin/python
 # -*- coding: latin-1 -*-
 #
-# https://github.com/sp9wpn/m32_chat_server
+# an implementation of the mopp protocol for Morserino-32
+# based on https://github.com/sp9wpn/m32_chat_server
+# the protocol description is:  https://github.com/oe1wkl/Morserino-32/blob/master/Documentation/Protocol%20Description/morse_code_over_packet_protocol.md
+#
 #
 import socket
 import time
 
-from mopp import mopp, splitmessage, debug, str2bin, str2hex, bytes2bin, bytes2hex, binstring2msg, stripheader, string2stringmessage
+from mopp import mopp, splitmessage, get_message, debug, str2bin, str2hex, bytes2bin, bytes2hex, binstring2msg, stripheader, string2stringmessage
+
+
 SERVER_IP = "0.0.0.0"
 UDP_PORT = 7373
 CLIENT_TIMEOUT = 300
@@ -17,30 +22,35 @@ DEBUG = 1
 serversock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 serversock.bind((SERVER_IP, UDP_PORT))
 serversock.settimeout(KEEPALIVE)
-debug("Server started, listening on %s:%s" % (SERVER_IP,UDP_PORT))
+debug("Server started, listening on %s:%s" % (SERVER_IP, UDP_PORT))
 
 receivers = {}
 receivers_speed = {}
 
-def sendto_serversock(input_data,client):
+
+def sendto_serversock(input_data, client):
+    """send a data to a mopp client 
+    """
     ip, port = client.split(':')
     serversock.sendto(input_data, (ip, int(port)))
 
 
 def send_text_to_client(client, speed, text_message):
-  """send a number of mopp words from a text 
-  """
+    """send a text to a mopp client 
+    """
 
-  debug('%s, < "%s"' % (client,text_message))
-  for word in text_message.split(' '):
-    sendto_serversock(mopp(speed,word), client) 
+    debug('%s, < "%s"' % (client, text_message))
+    for word in text_message.split(' '):
+        sendto_serversock(mopp(speed, word), client)
 
-  return 
+    return
 
 
-def broadcast(input_data, client):
+def broadcast(input_data, excluded_client):
+    """broadcast a text to everyone except one mopp client 
+    """
     for c in receivers.keys():
-        if c == client:
+        if c == excluded_client:
             continue
 
         debug("%s, Broadcasting " % c)
@@ -50,14 +60,24 @@ def broadcast(input_data, client):
 def welcome(client, speed):
     client_number = str(len(receivers))
     receivers[client] = time.time()
-    debug("%s, New client %s" % (client,client_number))
+    debug("%s, New client %s" % (client, client_number))
 
-    send_text_to_client(client, speed, 'hi ' + client_number + ' pse k' )
+    send_text_to_client(client, speed, 'hi ' + client_number + ' pse k')
 
 
 def reject(client, speed):
     debug('%s, Rejecting' % client)
     send_text_to_client(client, speed, ':qrl K')
+
+
+def enroll_new_client(client, speed):
+    if (len(receivers) < MAX_CLIENTS):
+        receivers[client] = time.time()
+        receivers_speed[client] = speed
+        welcome(client, receivers_speed[client])
+    else:
+        reject(client, speed)
+        debug("ERR: maximum clients reached")
 
 
 while KeyboardInterrupt:
@@ -67,41 +87,22 @@ while KeyboardInterrupt:
 
         client = addr[0] + ':' + str(addr[1])
 
-        (b_protocol, b_serial_number, b_speed, b_data) = splitmessage(input_bytes)
-        speed = int(b_speed,2)
-        message_text = binstring2msg(b_data)
-
-        debug('==============')
-        debug('%s > "%s" -> %s' % (client, bytes2bin(input_bytes), input_bytes.hex(':')))
-        debug('--- Header ---' )
-        debug('%s             = protocol version: %s' % ( b_protocol,int(b_protocol,2)))
-        debug('  %s       = serial number   : %s'     % ( b_serial_number,int(b_serial_number,2)))
-        debug('        %s = speed           : %s wpm' % ( b_speed,int(b_speed,2)))
-        debug('--- Data ---' )
-        debug('%s = "%s"' % (b_data, message_text))
-        debug('==============')
-        
+        (message_text, speed, b_protocol, b_serial_number) = get_message(input_bytes)
 
         if client in receivers:
-            if  (message_text == ':bye') or (message_text == '<sk>'):
+            if (message_text == ':bye') or (message_text == '<sk>'):
                 #   if stripheader(input_data) == stripheader(mopp(20, ':bye')):
                 debug("%s, removing client on request" % client)
                 send_text_to_client(client, speed, 'bye K e e')
                 del receivers[client]
                 del receivers_speed[client]
             else:
+                # broadcast this message to everyone else
                 broadcast(input_bytes, client)
                 receivers[client] = time.time()
         else:
-            if  (message_text == 'k') or (message_text == 'hi'):
-                #   if stripheader(input_data) == stripheader(mopp(20, 'hi')):
-                if (len(receivers) < MAX_CLIENTS):
-                    receivers[client] = time.time()
-                    receivers_speed[client] = speed
-                    welcome(client, receivers_speed[client])
-                else:
-                    reject(client, speed)
-                    debug("ERR: maximum clients reached")
+            if (message_text == 'k') or (message_text == 'hi'):
+                enroll_new_client(client, speed)
             else:
                 send_text_to_client(client, speed, '?')
                 debug("%s, is unknown client, ignoring" % client)
@@ -128,6 +129,6 @@ while KeyboardInterrupt:
 
     for client in clients_to_be_removed:
         debug("%s, removing expired client" % client)
-        send_text_to_client(client,receivers_speed[client], 'bye K e e')
+        send_text_to_client(client, receivers_speed[client], 'bye K e e')
         del receivers[client]
         del receivers_speed[client]

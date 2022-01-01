@@ -3,4 +3,4 @@ Morserino-32 mopp protocol server, inspired by https://github.com/oe1wkl/Morseri
 
 This provides a python based QSO server that Morserinos can connect to and talk with each other
 
-The protocol description is here: https://github.com/oe1wkl/Morserino-32/blob/master/Documentation/Protocol%20Description/morse_code_over_packet_protocol.md
+The original protocol description is here: https://github.com/oe1wkl/Morserino-32/blob/master/Documentation/Protocol%20Description/morse_code_over_packet_protocol.md
