@@ -13,8 +13,7 @@ import re
 from mopp import Mopp
 from server import Server
 import logging
-
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+from qsobot import QsoBot
 
 
 class MoppClient:
@@ -38,17 +37,19 @@ class MoppServer:
     DEBUG = 1
 
     def __init__(self, server):
-        self.clients = {}
-        self.clients_speed = {}
+        self.clients = {} 
         self.server = server
         self.message = {
             'JOIN': r'k|hi',
             'LEAVE': r':bye|<sk>|K',
-            'WELCOME': 'hi %s pse k',
+            'WELCOME': 'hi %s',
+            # 'WELCOME': 'hi %s pse k',
             'BUSY': 'qrl K',
             'GOODBYE': 'K e e',
-            'HELLOSTRANGER': '? hi',
+            'HELLOSTRANGER': '?',
         }
+        
+
 
     def send_raw(self, client_id, raw_data):
         """send a data to a mopp client, data includes speed info
@@ -60,7 +61,7 @@ class MoppServer:
         """send a text to a mopp client, either with client's speed or supplied speed
         """
         if speed == None:
-            speed = self.clients_speed[client_id]
+            speed = self.clients[client_id]['speed']
         logging.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
         for word in text_message.split(' '):
             self.send_raw(client_id, Mopp.encode_text(speed, word))
@@ -92,8 +93,9 @@ class MoppServer:
         client_number = str(len(self.clients) + 1)
         if (int(client_number) < self.MAX_CLIENTS):
             logging.debug("%s, New client %s" % (client_id, client_number))
-            self.clients[client_id] = time.time()
-            self.clients_speed[client_id] = speed
+            
+            self.clients[client_id]={'time':time.time(),'speed':speed,'bot':QsoBot()}
+            
             self.send_text(client_id, self.message['WELCOME'] % client_number)
         else:
             logging.debug("ERR: maximum clients reached")
@@ -102,26 +104,29 @@ class MoppServer:
     def remove_client(self, client_id):
         logging.debug("%s, removing client" % client_id)
         self.send_text(client_id, self.message['GOODBYE'])
+        del self.clients[client_id]['bot']
         del self.clients[client_id]
-        del self.clients_speed[client_id]
 
     def renew_client(self, client_id, speed=None):
-        self.clients[client_id] = time.time()
+        self.clients[client_id]['time'] = time.time()
         if speed != None:
-            self.clients_speed[client_id] = speed
+            self.clients[client_id]['speed'] = speed
 
     def cleanup_clients(self):
         # clean clients list
         clients_to_be_removed = []
-        for c in self.clients.items():
-            if c[1] + self.CLIENT_TIMEOUT < time.time():
-                clients_to_be_removed.append(c[0])
+        for client_id in self.clients.keys():
+            if int(self.clients[client_id]['time']) + self.CLIENT_TIMEOUT < time.time():
+                clients_to_be_removed.append(client_id)
 
-        for client in clients_to_be_removed:
-            self.remove_client(client)
+        for client_id in clients_to_be_removed:
+            self.remove_client(client_id)
 
     def is_message_type(self, message_key, message_text):
         return re.match(self.message[message_key], message_text)
+    
+
+        
 
     def process_message(self, input_bytes, addr):
 
@@ -138,7 +143,8 @@ class MoppServer:
                 self.remove_client(client_id)
             else:
                 # broadcast this message to everyone else
-                self.broadcast_raw(input_bytes, client_id)
+                # self.broadcast_raw(input_bytes, client_id)
+                self.send_text(client_id, self.clients[client_id]['bot'].qso(message_text))
                 self.renew_client(client_id, speed)
         else:
             # if (message_text == 'k') or (message_text == 'hi'):
@@ -152,7 +158,10 @@ class MoppServer:
 
 if __name__ == "__main__":
 
-    serverInstance = Server()
+    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+    CLIENT_KEEPALIVE = 10 # timeout for server connections
+    
+    serverInstance = Server(keepalive=CLIENT_KEEPALIVE)
     serverInstance.start()  # TODO: error handling
 
     MS = MoppServer(serverInstance)
