@@ -8,6 +8,7 @@
 #
 import socket
 import time
+import re
 
 from mopp import Mopp
 from server import Server
@@ -21,10 +22,8 @@ class MoppClient:
         self.timer = timer
         self.speed = None
         self.status = None
-
-    def id(self):
-        return self.create_id(self.ip, self.port)
-
+        self.id = self.create_id(ip, port)
+        
     def create_id(ip, port):
         return ip + ':' + port
 
@@ -34,6 +33,7 @@ class MoppServer:
     MAX_CLIENTS = 10
     CLIENT_TIMEOUT = 60
     DEBUG = 1
+    
 
     def __init__(self, mopp, server):
         self.receivers = {}
@@ -41,6 +41,14 @@ class MoppServer:
         self.clients = {}
         self.mopp = mopp
         self.server = server
+        self.message = {
+            'ENTER' : r'k|hi',
+            'LEAVE' : r':bye|<sk>|K',
+            'WELCOME': 'hi %s pse k',
+            'BUSY': 'qrl K',
+            'GOODBYE': 'K e e',
+            'HELLOSTRANGER': '? hi',
+        }
 
     def debug(self, str):
         if self.DEBUG:
@@ -72,7 +80,7 @@ class MoppServer:
                 continue
 
             self.sendtext(client_id, text)
-        self.debug("Broadcasting %s" % text)
+        self.debug("%s, Broadcasting %s" % (client_id,text))
 
     def broadcast_raw(self, data=b'', excluded_client=None):
         """broadcast a raw message to everyone except to excluded_client 
@@ -85,22 +93,20 @@ class MoppServer:
             self.debug("%s, Broadcasting " % client_id)
             self.send_raw(client_id, data)
 
-
     def add_client(self, client_id, speed):
         client_number = str(len(self.receivers) + 1)
         if (int(client_number) < self.MAX_CLIENTS):
             self.debug("%s, New client %s" % (client_id, client_number))
             self.receivers[client_id] = time.time()
             self.receivers_speed[client_id] = speed
-            self.send_text(client_id, 'hi ' + client_number + ' pse k')
+            self.send_text(client_id, self.message['WELCOME'] % client_number )
         else:
             self.debug("ERR: maximum clients reached")
-            self.send_text(client_id, ':qrl K', speed)
-            self.remove_client(client_id)
+            self.send_text(client_id, self.message['BUSY'], speed)
 
     def remove_client(self, client_id):
-        self.debug("%s, removing expired client" % client_id)
-        self.send_text(client_id, 'K e e')
+        self.debug("%s, removing client" % client_id)
+        self.send_text(client_id, self.message['GOODBYE'])
         del self.receivers[client_id]
         del self.receivers_speed[client_id]
 
@@ -115,8 +121,8 @@ class MoppServer:
         for c in self.receivers.items():
             if c[1] + self.CLIENT_TIMEOUT < time.time():
                 clients_to_be_removed.append(c[0])
-        
-        for client in clients_to_be_removed:        
+
+        for client in clients_to_be_removed:
             self.remove_client(client)
 
     def process_message(self, input_bytes, addr):
@@ -129,19 +135,21 @@ class MoppServer:
             self.mopp.get_message(input_bytes)
 
         if client_id in self.receivers:
-            if (message_text == ':bye') or (message_text == '<sk>') or (message_text == 'K'):
+            # if (message_text == ':bye') or (message_text == '<sk>') or (message_text == 'K'):
+            if (re.match(self.message['LEAVE'],message_text)):
                 self.remove_client(client_id)
             else:
                 # broadcast this message to everyone else
                 self.broadcast_raw(input_bytes, client_id)
                 self.renew_client(client_id, speed)
         else:
-            if (message_text == 'k') or (message_text == 'hi'):
+            # if (message_text == 'k') or (message_text == 'hi'):
+            if (re.match(self.message['ENTER'],message_text)):
                 self.add_client(client_id, speed)
             else:
                 self.debug("%s, is unknown client, ignoring" % client_id)
                 # answer unknown client with own speed
-                self.send_text(client_id, '? hi', speed)
+                self.send_text(client_id, self.message['HELLOSTRANGER'], speed)
 
 
 if __name__ == "__main__":
