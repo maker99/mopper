@@ -10,7 +10,6 @@ import socket
 import time
 
 
-
 class Server:
     SERVER_IP = "0.0.0.0"
     UDP_PORT = 7373
@@ -42,7 +41,7 @@ class Server:
 
         self.serversock.settimeout(self.keepalive)
         self.debug("Server started, listening on %s:%s" %
-              (self.server_ip, self.udp_port))
+                   (self.server_ip, self.udp_port))
 
     def stop(self):
         self.serversock.close()
@@ -54,12 +53,12 @@ class Server:
         self.serversock.sendto(data, (ip, int(port)))
 
     def getInput(self):
-        input_bytes=None
-        addr=None
-        
+        input_bytes = None
+        addr = None
+
         try:
             input_bytes, addr = self.serversock.recvfrom(64)
         except:
-          pass
-        
+            pass
+
         return input_bytes, addr
