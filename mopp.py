@@ -11,15 +11,11 @@ from math import ceil
 
 
 class Mopp:
-  
-  def __init__(self):
-    self.DEBUG = 1   # enable / disable debugging messages. TODO: add a logger instead and add log levels
 
-    self.serial = 1  # TODO: make it a local var per instance: serial number for messages, increases for every encoded message
-
+    DEBUG = 1
     # encoding of ASCII chars to morse, represented as dit (dot) and dah (dash)
     #  Note: some special chars are encoded as uppercase letters
-    self.morseCodes = {
+    morseCodes = {
         "0": "-----",
         "1": ".----",
         "2": "..---",
@@ -100,10 +96,9 @@ class Mopp:
 
     # a = mopp.char.EOW
 
-
     # encoding of a MOPP message, it consist of two bit elements
     #  two bit to string
-    self.moppcode = {
+    moppcode = {
         "00": ":",  # EOC end of char
         "01": ".",  # dit
         "10": "-",  # dah
@@ -111,195 +106,199 @@ class Mopp:
     }
 
     # MOPP char to bits
-    self.EOW = "11"
-    self.EOC = "00"
-    self.DIT = "01"
-    self.DAT = "10"
+    EOW = "11"
+    EOC = "00"
+    DIT = "01"
+    DAT = "10"
 
     # constants for the MOPP protocol field
-    self.PROT_V1 = "01"
-    self.PROT_V2 = "10"
-    self.PROT_V3 = "11"
-    
-    self.protocol=self.PROT_V1
+    PROT_V1 = "01"
+    PROT_V2 = "10"
+    PROT_V3 = "11"
 
+    def enable_debug():
+        Mopp.DEBUG = 1
 
+    def disable_debug():
+        Mopp.DEBUG = 0
 
-  def debug(self,str):
-      if self.DEBUG:
-          # print str
-          print("%s: %s" % (time.strftime("%Y-%m-%d %H%M%S"), str))
+    def debug(str):
+        if Mopp.DEBUG:
+            # print str
+            print("%s: %s" % (time.strftime("%Y-%m-%d %H%M%S"), str))
 
+    # convert a string to hex format, bytes are separated by colons
 
-  # convert a string to hex format, bytes are separated by colons
-  def str2hex(self,str):
-      ret = 'could not decode'
-      try:
-          ret = ":".join("{:02x}".format(ord(c)) for c in str)
-      except:
-          pass
+    def str2hex(str):
+        ret = 'could not decode'
+        try:
+            ret = ":".join("{:02x}".format(ord(c)) for c in str)
+        except:
+            pass
 
-      return ret
+        return ret
 
-  # convert a string to hex format, bytes are separated by colons
+    # convert a string to hex format, bytes are separated by colons
 
+    def bytes2hex(bytes):
+        ret = 'could not decode'
+        try:
+            ret = ":".join("{:02x}".format(b) for b in bytes)
+        except:
+            pass
 
-  def bytes2hex(self,bytes):
-      ret = 'could not decode'
-      try:
-          ret = ":".join("{:02x}".format(b) for b in bytes)
-      except:
-          pass
+        return ret
 
-      return ret
+    # convert a string to a 8bit/char binary format representation, bytes/chars are not separated
 
-  # convert a string to a 8bit/char binary format representation, bytes/chars are not separated
+    def str2bin(str):
+        return "".join("{:08b}".format(ord(c)) for c in str)
 
+    # convert a string to a 8bit/char binary format representation, bytes/chars are not separated
 
-  def str2bin(self,str):
-      return "".join("{:08b}".format(ord(c)) for c in str)
+    def bytes2bin(bytes):
+        return "".join("{:08b}".format(b) for b in bytes)
 
-  # convert a string to a 8bit/char binary format representation, bytes/chars are not separated
+    def normalize_serial(serial):
+        return int(int(serial) % 63)
 
+    def increment_serial(serial):
+        return int((int(serial) + 1) % 63)
 
-  def bytes2bin(self,bytes):
-      return "".join("{:08b}".format(b) for b in bytes)
+    # mopp function, creates a mopp message from speed, protocol version and a morse string
 
+    def encode_text(speed, text, protocol=None, serial=1):
 
-  # mopp function, creates a mopp message from speed, protocol version and a morse string
-  def mopp(self, speed, text ):
-      # global serial
-      # global morseCodes
+        if protocol == None:
+            protocol = Mopp.PROT_V1
 
-      m = self.protocol				            # protocol        2 bit
-      m += bin(self.serial)[2:].zfill(6)   # serial number   6 bit
-      m += bin(int(speed))[2:].zfill(6)   # speed           6 bit
+        serial = Mopp.normalize_serial(serial)
 
-      for c in text:
-          if c == " ":
-              continue				# spaces not supported by morserino!
+        m = protocol				        # protocol        2 bit
+        m += bin(serial)[2:].zfill(6)       # serial number   6 bit
+        m += bin(int(speed))[2:].zfill(6)   # speed           6 bit
 
-          try:
-              if c in self.morseCodes:     # case of c can be lower or upper
-                  c = c
-              elif c.lower() in self.morseCodes:  # uppercase char is not matching, try with the lowercase one
-                  c = c.lower()
+        for c in text:
+            if c == " ":
+                continue				# spaces not supported by morserino!
 
-              for b in self.morseCodes[c]:
-                  # for b in morseCodes[c.lower()]:
-                  if b == '.':
-                      m += self.DIT
-                  else:
-                      m += self.DAT
+            try:
+                if c in Mopp.morseCodes:     # case of c can be lower or upper
+                    c = c
+                elif c.lower() in Mopp.morseCodes:  # uppercase char is not matching, try with the lowercase one
+                    c = c.lower()
 
-              m += self.EOC				# EOC
-          except:
-              self.debug("not found: %s" % c)
-              pass
+                for b in Mopp.morseCodes[c]:
+                    # for b in Mopp.morseCodes[c.lower()]:
+                    if b == Mopp.moppcode[Mopp.DIT]:
+                        m += Mopp.DIT
+                    else:
+                        m += Mopp.DAT
 
-      m = m[0:-2] + self.EOW			# final EOW
+                m += Mopp.EOC				# EOC
+            except:
+                Mopp.debug("not found: %s" % c)
+                pass
 
-      m = m.ljust(int(8*ceil(len(m)/8.0)), '0')  # fill up the last byte
+        m = m[0:-2] + Mopp.EOW			# final EOW
 
-      res = bytearray()
-      for i in range(0, len(m), 8):        # convert bin string to bytearray
-          res.append(int(m[i:i+8], 2))
+        m = m.ljust(int(8*ceil(len(m)/8.0)), '0')  # fill up the last byte
 
-      # step serial number and keep within 1..63
-      self.serial = (self.serial % 63) + 1
+        res = bytearray()
+        for i in range(0, len(m), 8):        # convert bin string to bytearray
+            res.append(int(m[i:i+8], 2))
 
-      return res
+        return res
 
+    # remove the header from a byte string mopp message
 
-  # remove the header from a byte string mopp message
-  def stripheader(self,str):
-      return chr(ord(str[1]) & 3) + str[2:]
+    def stripheader(str):
+        return chr(ord(str[1]) & 3) + str[2:]
 
+    def splitmessage(msg):
+        """ splits a byte string mopp message into headers and message
+            the headers are binary (right aligned into a byte each)
+            the message is returned as a string of 0s and 1s  
+        """
+        # TODO: implement error handling and logging
+        message = Mopp.bytes2bin(msg)
 
-  def splitmessage(self,msg):
-      """ splits a byte string mopp message into headers and message
-          the headers are binary (right aligned into a byte each)
-          the message is returned as a string of 0s and 1s  
-      """
-      # TODO: implement error handling and logging
-      message = self.bytes2bin(msg)
+        protocol = message[0: 2]  # 2 bit     from 0
+        serial_number = message[2: 8]  # 6 bit     from 2
+        speed = message[8:14]  # 6 bit     from 2+6
+        data = message[14:]  # the rest  from 2+6+6
 
-      protocol = message[0: 2]  # 2 bit     from 0
-      serial_number = message[2: 8]  # 6 bit     from 2
-      speed = message[8:14]  # 6 bit     from 2+6
-      data = message[14:]  # the rest  from 2+6+6
+        return (protocol, serial_number, speed, data)
 
-      return (protocol, serial_number, speed, data)
+    def decode_message(input_bytes):
+        """ get data from a mopp message:
+            speed, text, protocol and serial number
+        """
+        # TODO: implement error handling and logging
 
+        (b_protocol, b_serial_number, b_speed,
+         b_data) = Mopp.splitmessage(input_bytes)
+        speed = int(b_speed, 2)
+        message_text = Mopp.binstring2msg(b_data)
 
-  def get_message(self,input_bytes):
-      """ get data from a mopp message:
-          speed, text, protocol and serial number
-      """
-      # TODO: implement error handling and logging
+        Mopp.debug('==============')
+        Mopp.debug('"%s" -> %s' %
+                   (Mopp.bytes2bin(input_bytes), input_bytes.hex(':')))
+        Mopp.debug('--- Header ---')
+        Mopp.debug('%s             = protocol version: %s' %
+                   (b_protocol, int(b_protocol, 2)))
+        Mopp.debug('  %s       = serial number   : %s' %
+                   (b_serial_number, int(b_serial_number, 2)))
+        Mopp.debug('        %s = speed           : %s wpm' %
+                   (b_speed, int(b_speed, 2)))
+        Mopp.debug('--- Data ---')
+        Mopp.debug('%s = "%s"' % (b_data, message_text))
+        Mopp.debug('==============')
 
-      (b_protocol, b_serial_number, b_speed, b_data) = self.splitmessage(input_bytes)
-      speed = int(b_speed, 2)
-      message_text = self.binstring2msg(b_data)
+        return (speed, message_text, b_protocol, b_serial_number)
 
-      self.debug('==============')
-      self.debug('"%s" -> %s' %
-              (self.bytes2bin(input_bytes), input_bytes.hex(':')))
-      self.debug('--- Header ---')
-      self.debug('%s             = protocol version: %s' %
-              (b_protocol, int(b_protocol, 2)))
-      self.debug('  %s       = serial number   : %s' %
-              (b_serial_number, int(b_serial_number, 2)))
-      self.debug('        %s = speed           : %s wpm' %
-              (b_speed, int(b_speed, 2)))
-      self.debug('--- Data ---')
-      self.debug('%s = "%s"' % (b_data, message_text))
-      self.debug('==============')
+    # get_message = decode_message
 
-      return (speed, message_text, b_protocol, b_serial_number)
+    def morse2char(morseChar):
 
+        if morseChar == '':
+            return ""
 
-  def morse2char(self,morseChar):
+        char = '*(' + morseChar + ')'
+        for c, m in Mopp.morseCodes.items():
+            if morseChar == m:
+                char = c
+                break
+        return char
 
-      if morseChar == '':
-          return ""
+    # convert data encoded as a binstring (a series of 0s and 1s) into a text string
+    # TODO: make robust against unknown dit/dah sequences
 
-      char = '*(' + morseChar + ')'
-      for c, m in self.morseCodes.items():
-          if morseChar == m:
-              char = c
-              break
-      return char
+    def binstring2msg(data):
 
+        # workaround for corrupted data strings, add 1 and EOW to make it even
+        if len(data) % 2 == 1:
+            data = data + '111'
 
-  # convert data encoded as a binstring (a series of 0s and 1s) into a text string
-  # TODO: make robust against unknown dit/dah sequences
-  def binstring2msg(self,data):
+        # convert the moppcoded binstring into a morse code string
+        morseMessage = "".join([Mopp.moppcode[data[i:i+2]]
+                                for i in range(0, len(data), 2)])
 
-      # workaround for corrupted data strings, add 1 and EOW to make it even
-      if len(data) % 2 == 1:
-          data = data + '111'
+        # now clean up and cut at first EOW, discard the rest, why??
+        morseMessage = morseMessage.split(Mopp.moppcode[Mopp.EOW])[0]
 
-      # convert the moppcoded binstring into a morse code string
-      morseMessage = "".join([self.moppcode[data[i:i+2]]
-                            for i in range(0, len(data), 2)])
+        # here we have one word, chars are separated by colons
+        mchars = morseMessage.split(Mopp.moppcode[Mopp.EOC])
 
-      # now clean up and cut at first EOW, discard the rest, why??
-      morseMessage = morseMessage.split("#")[0]
+        # decode dot - dash encoded characters into an ascii string
+        message = "".join([Mopp.morse2char(mc) for mc in mchars])
+        # message=" ".join(morseMessage.split(":"))
 
-      # here we have one word, chars are separated by colons
-      mchars = morseMessage.split(":")
+        return message
 
-      # decode dot - dash encoded characters into an ascii string
-      message = "".join([self.morse2char(mc) for mc in mchars])
-      # message=" ".join(morseMessage.split(":"))
+    # decode the mopp message text from the binary string message
 
-      return message
-
-  # decode the mopp message text from the binary string message
-
-
-  def string2stringmessage(self,string):
-      moppMsg = self.mopp(20, string)
-      (protocol, serialNo, wpm, data) = self.splitmessage(moppMsg)
-      return self.binstring2msg(data)
+    def string2stringmessage(string):
+        moppMsg = Mopp.encode_text(20, string)
+        (protocol, serialNo, wpm, data) = Mopp.splitmessage(moppMsg)
+        return Mopp.binstring2msg(data)

@@ -7,45 +7,61 @@
 from mopp import Mopp
 
 
-def debugIt(m,msg):
-    moppMsg = m.mopp(20, msg)
-    (protocol, serialNo, wpm, data) = m.splitmessage(moppMsg)
-    m.debug('message: %s -> %s(%s)' % (msg, m.str2hex(moppMsg), m.str2bin(moppMsg)))
-    m.debug('protocol: %s(%s), serial: %s(%s), wpm: %s(%s), data: %s(%s)' % (
+def debugIt(msg):
+    moppMsg = Mopp.encode_text(20, msg)
+    (protocol, serialNo, wpm, data) = Mopp.splitmessage(moppMsg)
+    Mopp.debug('message: %s -> %s(%s)' %
+               (msg, Mopp.str2hex(moppMsg), Mopp.str2bin(moppMsg)))
+    Mopp.debug('protocol: %s(%s), serial: %s(%s), wpm: %s(%s), data: %s(%s)' % (
         int(protocol, 2), protocol,
         int(serialNo, 2), serialNo,
         int(wpm, 2), wpm,
-        m.string2stringmessage(data), data
+        Mopp.string2stringmessage(data), data
     ))
 
 
-def smessage(m,msg):
-    moppMsg = m.mopp(20, msg)
-    return m.splitmessage(moppMsg)
+def smessage(msg):
+    moppMsg = Mopp.encode_text(20, msg)
+    return Mopp.splitmessage(moppMsg)
 
 
-def test_messages(m):
-    assert smessage(m,'abc')[3] == '01100010010101001001100111'
-    assert m.binstring2msg(smessage(m,'abc')[3]) == 'abc'
-    assert m.string2stringmessage('abc') == 'abc'
-    assert m.string2stringmessage('>') == ''
-    assert m.string2stringmessage('A@C') == 'A@c'
-    assert m.string2stringmessage('C"') == 'c'
+def test_messages():
+    assert smessage('abc')[3] == '01100010010101001001100111'
+    assert Mopp.binstring2msg(smessage('abc')[3]) == 'abc'
+    assert Mopp.string2stringmessage('abc') == 'abc'
+    assert Mopp.string2stringmessage('>') == ''
+    assert Mopp.string2stringmessage('A@C') == 'A@c'
+    assert Mopp.string2stringmessage('C"') == 'c'
 
 
-def test_special(m):
-    assert '' == m.binstring2msg('111111')
-    assert '*' == m.binstring2msg('101010101010')
-    assert '' == m.binstring2msg('1111101')
-    assert 'en' == m.binstring2msg('01000010011')
+def test_special():
+    assert '' == Mopp.binstring2msg('111111')
+    assert '*' == Mopp.binstring2msg('101010101010')
+    assert '' == Mopp.binstring2msg('1111101')
+    assert 'en' == Mopp.binstring2msg('01000010011')
 
-m = Mopp()
-test_messages(m)
+
+test_messages()
 print()
-assert smessage(m,'abc')[3] == '01100010010101001001100111'
-assert m.binstring2msg(smessage(m,'abc')[3]) == 'abc'
-assert m.string2stringmessage('abc') == 'abc'
-assert m.string2stringmessage('>') == ''
-print ("%s -> %s" %('A@C',m.string2stringmessage('A@C')))
-assert m.string2stringmessage('A@C') == 'A@c'
-assert m.string2stringmessage('C"') == 'c'
+assert smessage('abc')[3] == '01100010010101001001100111'
+assert Mopp.binstring2msg(smessage('abc')[3]) == 'abc'
+assert Mopp.string2stringmessage('abc') == 'abc'
+assert Mopp.string2stringmessage('>') == ''
+print("%s -> %s" % ('A@C', Mopp.string2stringmessage('A@C')))
+assert Mopp.string2stringmessage('A@C') == 'A@c'
+assert Mopp.string2stringmessage('C"') == 'c'
+
+assert '' == Mopp.binstring2msg('111111')
+print("%s -> %s" % ('101010101010', Mopp.binstring2msg('101010101010')))
+assert '*(------)' == Mopp.binstring2msg('101010101010')
+assert '' == Mopp.binstring2msg('1111101')
+assert 'en' == Mopp.binstring2msg('01000010011')
+
+msg = 'hello'
+Mopp.disable_debug()
+mm = Mopp.encode_text(20, msg, protocol=Mopp.PROT_V2, serial=2)
+print("%s -> %s" % (msg, mm.hex(':'),))
+(speed, message_text, b_protocol, b_serial_number) = Mopp.decode_message(mm)
+Mopp.enable_debug()
+mm = Mopp.encode_text(20, msg, protocol=Mopp.PROT_V3, serial=3)
+(speed, message_text, b_protocol, b_serial_number) = Mopp.decode_message(mm)

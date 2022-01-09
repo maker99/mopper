@@ -23,7 +23,7 @@ class MoppClient:
         self.speed = None
         self.status = None
         self.id = self.create_id(ip, port)
-        
+
     def create_id(ip, port):
         return ip + ':' + port
 
@@ -33,17 +33,15 @@ class MoppServer:
     MAX_CLIENTS = 10
     CLIENT_TIMEOUT = 60
     DEBUG = 1
-    
 
-    def __init__(self, mopp, server):
+    def __init__(self, server):
         self.receivers = {}
         self.receivers_speed = {}
         self.clients = {}
-        self.mopp = mopp
         self.server = server
         self.message = {
-            'ENTER' : r'k|hi',
-            'LEAVE' : r':bye|<sk>|K',
+            'ENTER': r'k|hi',
+            'LEAVE': r':bye|<sk>|K',
             'WELCOME': 'hi %s pse k',
             'BUSY': 'qrl K',
             'GOODBYE': 'K e e',
@@ -68,7 +66,7 @@ class MoppServer:
             speed = self.receivers_speed[client_id]
         self.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
         for word in text_message.split(' '):
-            self.send_raw(client_id, self.mopp.mopp(speed, word))
+            self.send_raw(client_id, Mopp.encode_text(speed, word))
 
     def broadcast_text(self, text, excluded_client=None):
         """broadcast a text to everyone except one mopp client 
@@ -80,7 +78,7 @@ class MoppServer:
                 continue
 
             self.sendtext(client_id, text)
-        self.debug("%s, Broadcasting %s" % (client_id,text))
+        self.debug("%s, Broadcasting %s" % (client_id, text))
 
     def broadcast_raw(self, data=b'', excluded_client=None):
         """broadcast a raw message to everyone except to excluded_client 
@@ -99,7 +97,7 @@ class MoppServer:
             self.debug("%s, New client %s" % (client_id, client_number))
             self.receivers[client_id] = time.time()
             self.receivers_speed[client_id] = speed
-            self.send_text(client_id, self.message['WELCOME'] % client_number )
+            self.send_text(client_id, self.message['WELCOME'] % client_number)
         else:
             self.debug("ERR: maximum clients reached")
             self.send_text(client_id, self.message['BUSY'], speed)
@@ -132,11 +130,11 @@ class MoppServer:
         client_id = client_ip + ':' + client_port
 
         (speed, message_text, b_protocol, b_serial_number) = \
-            self.mopp.get_message(input_bytes)
+            Mopp.decode_message(input_bytes)
 
         if client_id in self.receivers:
             # if (message_text == ':bye') or (message_text == '<sk>') or (message_text == 'K'):
-            if (re.match(self.message['LEAVE'],message_text)):
+            if (re.match(self.message['LEAVE'], message_text)):
                 self.remove_client(client_id)
             else:
                 # broadcast this message to everyone else
@@ -144,7 +142,7 @@ class MoppServer:
                 self.renew_client(client_id, speed)
         else:
             # if (message_text == 'k') or (message_text == 'hi'):
-            if (re.match(self.message['ENTER'],message_text)):
+            if (re.match(self.message['ENTER'], message_text)):
                 self.add_client(client_id, speed)
             else:
                 self.debug("%s, is unknown client, ignoring" % client_id)
@@ -154,11 +152,10 @@ class MoppServer:
 
 if __name__ == "__main__":
 
-    moppInstance = Mopp()
     serverInstance = Server()
     serverInstance.start()  # TODO: error handling
 
-    MS = MoppServer(moppInstance, serverInstance)
+    MS = MoppServer(serverInstance)
 
     while KeyboardInterrupt:
         time.sleep(0.2)						# anti flood
