@@ -5,14 +5,17 @@
 #
 # from mopp import mopp, splitmessage, debug, str2bin, str2hex, binstring2msg, string2stringmessage
 from mopp import Mopp
+import logging 
+
+logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)
 
 
 def debugIt(msg):
     moppMsg = Mopp.encode_text(20, msg)
     (protocol, serialNo, wpm, data) = Mopp.splitmessage(moppMsg)
-    Mopp.debug('message: %s -> %s(%s)' %
+    logging.debug('message: %s -> %s(%s)' %
                (msg, Mopp.str2hex(moppMsg), Mopp.str2bin(moppMsg)))
-    Mopp.debug('protocol: %s(%s), serial: %s(%s), wpm: %s(%s), data: %s(%s)' % (
+    logging.debug('protocol: %s(%s), serial: %s(%s), wpm: %s(%s), data: %s(%s)' % (
         int(protocol, 2), protocol,
         int(serialNo, 2), serialNo,
         int(wpm, 2), wpm,
@@ -58,10 +61,8 @@ assert '' == Mopp.binstring2msg('1111101')
 assert 'en' == Mopp.binstring2msg('01000010011')
 
 msg = 'hello'
-Mopp.disable_debug()
 mm = Mopp.encode_text(20, msg, protocol=Mopp.PROT_V2, serial=2)
 print("%s -> %s" % (msg, mm.hex(':'),))
 (speed, message_text, b_protocol, b_serial_number) = Mopp.decode_message(mm)
-Mopp.enable_debug()
 mm = Mopp.encode_text(20, msg, protocol=Mopp.PROT_V3, serial=3)
 (speed, message_text, b_protocol, b_serial_number) = Mopp.decode_message(mm)

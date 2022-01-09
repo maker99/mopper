@@ -12,6 +12,9 @@ import re
 
 from mopp import Mopp
 from server import Server
+import logging
+
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
 
 class MoppClient:
@@ -35,23 +38,17 @@ class MoppServer:
     DEBUG = 1
 
     def __init__(self, server):
-        self.receivers = {}
-        self.receivers_speed = {}
         self.clients = {}
+        self.clients_speed = {}
         self.server = server
         self.message = {
-            'ENTER': r'k|hi',
+            'JOIN': r'k|hi',
             'LEAVE': r':bye|<sk>|K',
             'WELCOME': 'hi %s pse k',
             'BUSY': 'qrl K',
             'GOODBYE': 'K e e',
             'HELLOSTRANGER': '? hi',
         }
-
-    def debug(self, str):
-        if self.DEBUG:
-            # print str
-            print("%s: %s" % (time.strftime("%Y-%m-%d %H%M%S"), str))
 
     def send_raw(self, client_id, raw_data):
         """send a data to a mopp client, data includes speed info
@@ -63,8 +60,8 @@ class MoppServer:
         """send a text to a mopp client, either with client's speed or supplied speed
         """
         if speed == None:
-            speed = self.receivers_speed[client_id]
-        self.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
+            speed = self.clients_speed[client_id]
+        logging.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
         for word in text_message.split(' '):
             self.send_raw(client_id, Mopp.encode_text(speed, word))
 
@@ -72,56 +69,59 @@ class MoppServer:
         """broadcast a text to everyone except one mopp client 
            Note: this text will be send in each client's own speed
         """
-        self.debug("Broadcasting %s" % text)
-        for client_id in self.receivers.keys():
+        logging.debug("Broadcasting %s" % text)
+        for client_id in self.clients.keys():
             if client_id == excluded_client:
                 continue
 
             self.sendtext(client_id, text)
-        self.debug("%s, Broadcasting %s" % (client_id, text))
+        logging.debug("%s, Broadcasting %s" % (client_id, text))
 
     def broadcast_raw(self, data=b'', excluded_client=None):
         """broadcast a raw message to everyone except to excluded_client 
            Note: speed is defined by data
         """
-        for client_id in self.receivers.keys():
+        for client_id in self.clients.keys():
             if client_id == excluded_client:
                 continue
 
-            self.debug("%s, Broadcasting " % client_id)
+            logging.debug("%s, Broadcasting " % client_id)
             self.send_raw(client_id, data)
 
     def add_client(self, client_id, speed):
-        client_number = str(len(self.receivers) + 1)
+        client_number = str(len(self.clients) + 1)
         if (int(client_number) < self.MAX_CLIENTS):
-            self.debug("%s, New client %s" % (client_id, client_number))
-            self.receivers[client_id] = time.time()
-            self.receivers_speed[client_id] = speed
+            logging.debug("%s, New client %s" % (client_id, client_number))
+            self.clients[client_id] = time.time()
+            self.clients_speed[client_id] = speed
             self.send_text(client_id, self.message['WELCOME'] % client_number)
         else:
-            self.debug("ERR: maximum clients reached")
+            logging.debug("ERR: maximum clients reached")
             self.send_text(client_id, self.message['BUSY'], speed)
 
     def remove_client(self, client_id):
-        self.debug("%s, removing client" % client_id)
+        logging.debug("%s, removing client" % client_id)
         self.send_text(client_id, self.message['GOODBYE'])
-        del self.receivers[client_id]
-        del self.receivers_speed[client_id]
+        del self.clients[client_id]
+        del self.clients_speed[client_id]
 
     def renew_client(self, client_id, speed=None):
-        self.receivers[client_id] = time.time()
+        self.clients[client_id] = time.time()
         if speed != None:
-            self.receivers_speed[client_id] = speed
+            self.clients_speed[client_id] = speed
 
     def cleanup_clients(self):
         # clean clients list
         clients_to_be_removed = []
-        for c in self.receivers.items():
+        for c in self.clients.items():
             if c[1] + self.CLIENT_TIMEOUT < time.time():
                 clients_to_be_removed.append(c[0])
 
         for client in clients_to_be_removed:
             self.remove_client(client)
+
+    def is_message_type(self, message_key, message_text):
+        return re.match(self.message[message_key], message_text)
 
     def process_message(self, input_bytes, addr):
 
@@ -132,9 +132,9 @@ class MoppServer:
         (speed, message_text, b_protocol, b_serial_number) = \
             Mopp.decode_message(input_bytes)
 
-        if client_id in self.receivers:
+        if client_id in self.clients:
             # if (message_text == ':bye') or (message_text == '<sk>') or (message_text == 'K'):
-            if (re.match(self.message['LEAVE'], message_text)):
+            if (self.is_message_type('LEAVE', message_text)):
                 self.remove_client(client_id)
             else:
                 # broadcast this message to everyone else
@@ -142,10 +142,10 @@ class MoppServer:
                 self.renew_client(client_id, speed)
         else:
             # if (message_text == 'k') or (message_text == 'hi'):
-            if (re.match(self.message['ENTER'], message_text)):
+            if (self.is_message_type('JOIN', message_text)):
                 self.add_client(client_id, speed)
             else:
-                self.debug("%s, is unknown client, ignoring" % client_id)
+                logging.debug("%s, is unknown client, ignoring" % client_id)
                 # answer unknown client with own speed
                 self.send_text(client_id, self.message['HELLOSTRANGER'], speed)
 

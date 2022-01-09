@@ -8,11 +8,13 @@
 
 import time
 from math import ceil
+import logging
 
 
 class Mopp:
-
-    DEBUG = 1
+    logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)
+    
+    
     # encoding of ASCII chars to morse, represented as dit (dot) and dah (dash)
     #  Note: some special chars are encoded as uppercase letters
     morseCodes = {
@@ -197,7 +199,7 @@ class Mopp:
 
                 m += Mopp.EOC				# EOC
             except:
-                Mopp.debug("not found: %s" % c)
+                logging.debug("encode_text: character not defined: %s" % c)
                 pass
 
         m = m[0:-2] + Mopp.EOW			# final EOW
@@ -241,19 +243,19 @@ class Mopp:
         speed = int(b_speed, 2)
         message_text = Mopp.binstring2msg(b_data)
 
-        Mopp.debug('==============')
-        Mopp.debug('"%s" -> %s' %
+        logging.debug('==============')
+        logging.debug('"%s" -> %s' %
                    (Mopp.bytes2bin(input_bytes), input_bytes.hex(':')))
-        Mopp.debug('--- Header ---')
-        Mopp.debug('%s             = protocol version: %s' %
+        logging.debug('--- Header ---')
+        logging.debug('%s             = protocol version: %s' %
                    (b_protocol, int(b_protocol, 2)))
-        Mopp.debug('  %s       = serial number   : %s' %
+        logging.debug('  %s       = serial number   : %s' %
                    (b_serial_number, int(b_serial_number, 2)))
-        Mopp.debug('        %s = speed           : %s wpm' %
+        logging.debug('        %s = speed           : %s wpm' %
                    (b_speed, int(b_speed, 2)))
-        Mopp.debug('--- Data ---')
-        Mopp.debug('%s = "%s"' % (b_data, message_text))
-        Mopp.debug('==============')
+        logging.debug('--- Data ---')
+        logging.debug('%s = "%s"' % (b_data, message_text))
+        logging.debug('==============')
 
         return (speed, message_text, b_protocol, b_serial_number)
 
