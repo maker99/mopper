@@ -23,8 +23,9 @@ class QsoBot:
         # 'DEFAULT' : [r'default','fb hw?'],
     }
     
-    msg_end_re = r'.*=.*'
-    msg_end_char = r'='
+    msg_split_re = r'.*=.*'
+    msg_split_char = r'='
+    msg_break_in_char = r'B'   # <bk> break in char
     
     def __init__(self) -> None:
         self.msg_buffer = ""
@@ -37,23 +38,29 @@ class QsoBot:
         Args:
             message ([string]): [input string from remote client]
         """        
-        answer = ''
+        answer = []
         # append to buffer
         logging.info("med_qso: message : %s" % message)
         self.msg_buffer += ' ' + message
         logging.info("med_qso: buffer : %s" % self.msg_buffer)
         # extract complete message
         #Todo: loop over 
-        while ( re.match(QsoBot.msg_end_re,self.msg_buffer) != None ):
-            (msg,self.msg_buffer) = self.msg_buffer.split(QsoBot.msg_end_char,1)
+        while ( re.match(QsoBot.msg_split_re,self.msg_buffer) != None ):
+            (msg,self.msg_buffer) = self.msg_buffer.split(QsoBot.msg_split_char,1)
             rule = self.match_rules(msg)
             if rule == None:
                 rule = 'NONE'
                 
-            answer = QsoBot.bot_messages[rule][1] + ' ='
-                
+            answer.append(QsoBot.bot_messages[rule][1])
             logging.info("med_qso: rule: %s, answer is: %s" % (rule,answer))
-        return answer
+                
+            
+        answer_text = QsoBot.msg_split_char.join(answer)
+        if len(answer_text  ) > 0:
+            answer_text += QsoBot.msg_break_in_char
+            
+        logging.info("med_qso: answer text is: %s" % (answer_text))
+        return answer_text
         
     def match_rules(self, message):
         answer = None
@@ -73,7 +80,7 @@ class QsoBot:
         
         if rule != None:
             logging.info("simple_qso: message matched rule: %s" % rule)
-            answer = QsoBot.bot_messages[rule][1] + QsoBot.msg_end_char
+            answer = QsoBot.bot_messages[rule][1] + QsoBot.msg_split_char
             logging.info("simple_qso: my answer is: %s" % answer)
         return answer
         
