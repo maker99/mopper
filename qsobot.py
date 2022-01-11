@@ -23,9 +23,9 @@ class QsoBot:
         # 'DEFAULT' : [r'default','fb hw?'],
     }
     
-    msg_split_re = r'.*=.*'
-    msg_split_char = r'='
-    msg_break_in_char = r'B'   # <bk> break in char
+    msg_break_re      = r'.*=.*'
+    msg_break_char    = r'='
+    msg_break_in_char = r'B'       # <bk> break in char
     
     def __init__(self) -> None:
         self.msg_buffer = ""
@@ -45,8 +45,8 @@ class QsoBot:
         logging.info("med_qso: buffer : %s" % self.msg_buffer)
         # extract complete message
         #Todo: loop over 
-        while ( re.match(QsoBot.msg_split_re,self.msg_buffer) != None ):
-            (msg,self.msg_buffer) = self.msg_buffer.split(QsoBot.msg_split_char,1)
+        while ( re.match(QsoBot.msg_break_re,self.msg_buffer) != None ):
+            (msg,self.msg_buffer) = self.msg_buffer.split(QsoBot.msg_break_char,1)
             rule = self.match_rules(msg)
             if rule == None:
                 rule = 'NONE'
@@ -54,10 +54,10 @@ class QsoBot:
             answer.append(QsoBot.bot_messages[rule][1])
             logging.info("med_qso: rule: %s, answer is: %s" % (rule,answer))
                 
-            
-        answer_text = QsoBot.msg_split_char.join(answer)
+        break_string = ' ' + QsoBot.msg_break_char + ' '
+        answer_text = break_string.join(answer)
         if len(answer_text  ) > 0:
-            answer_text += QsoBot.msg_break_in_char
+            answer_text += ' ' + QsoBot.msg_break_in_char
             
         logging.info("med_qso: answer text is: %s" % (answer_text))
         return answer_text
