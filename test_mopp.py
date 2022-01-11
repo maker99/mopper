@@ -46,6 +46,7 @@ def test_special():
 
 test_messages()
 print()
+assert Mopp.string2stringmessage('B') == 'B'
 assert smessage('abc')[3] == '01100010010101001001100111'
 assert Mopp.binstring2msg(smessage('abc')[3]) == 'abc'
 assert Mopp.string2stringmessage('abc') == 'abc'
