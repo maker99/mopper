@@ -5,26 +5,81 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
 class QsoBot:
     bot_messages = {
-        'QTH' : [r'.*(qth|loc).*is\s+(\S+)','my qth is aachen'],
-        'NAME' : [r'.*(name|op|qrz).*is\s+(\S+)','dr %s my name is bot'],
-        'RST' : [r'.*(rst)','ur rst is 599 5nn 5nn'],
-        'WX' : [r'.*(wx)','wx is cloudy'],
-        'TEMP' : [r'.*(temp)','temp is 5C'],
-        'RIG' : [r'.*(rig)','rig is FT-857D'],
-        'DEFAULT' : [r'default','?'],
+        'QTH'         : [r'.*(qth|loc).*\sis\s+(\S+)'  ,'my qth is aachen'     ],
+        'QTH0'        : [r'.*(qth|loc)'                ,'qth?'                 ],
+        'NAME'        : [r'.*(name|op|qrz).*is\s+(\S+)','dr %s my name is bot' ],
+        'NAME0'       : [r'.*(name|op|qrz)'            ,'name ?'               ],
+        'RST'         : [r'.*(rst).*is\s+(\S+)'        ,'ur rst is 599 5nn 5nn'],
+        'RST0'        : [r'.*(rst)'                    ,'HW?'                  ],
+        'WX'          : [r'.*(wx).*is\s+(\S+)'         ,'wx is cloudy'         ],
+        'WX0'         : [r'.*(wx)'                     ,'wx?'                  ],
+        'TEMP'        : [r'.*(temp).*is\s+(\S+)'       ,'temp is 5C'           ],
+        'TEMP0'       : [r'.*(temp)'                   ,'temp?'                ],
+        'RIG'         : [r'.*(rig).*is\s+(\S+)'        ,'rig is FT-857d'       ],
+        'RIG0'        : [r'.*(rig)'                    ,'rig?'                 ],
+        'TRAIN_WORDS' : [r'.*(:w)'                     ,'rig rig rig'          ],
+        'DEFAULT'     : [r'default'                    ,'?'                    ],
+        'NONE'        : [r'.*'                         ,'?'                    ],
         # 'DEFAULT' : [r'default','fb hw?'],
     }
     
-    def qso(self,message):
-        logging.info("qso_bot: message is: %s" % message)
-        answer = QsoBot.bot_messages['DEFAULT'][1]
-        # message = message.lower()
+    msg_end_re = r'.*=.*'
+    msg_end_char = r'='
+    
+    def __init__(self) -> None:
+        self.msg_buffer = ""
+        pass
+        
+    def med_qso(self, message):
+        """loops through inputs until break char is received, 
+        then analyze and try to answer
+
+        Args:
+            message ([string]): [input string from remote client]
+        """        
+        answer = ''
+        # append to buffer
+        logging.info("med_qso: message : %s" % message)
+        self.msg_buffer += ' ' + message
+        logging.info("med_qso: buffer : %s" % self.msg_buffer)
+        # extract complete message
+        #Todo: loop over 
+        while ( re.match(QsoBot.msg_end_re,self.msg_buffer) != None ):
+            (msg,self.msg_buffer) = self.msg_buffer.split(QsoBot.msg_end_char,1)
+            rule = self.match_rules(msg)
+            if rule == None:
+                rule = 'NONE'
+                
+            answer = QsoBot.bot_messages[rule][1] + ' ='
+                
+            logging.info("med_qso: rule: %s, answer is: %s" % (rule,answer))
+        return answer
+        
+    def match_rules(self, message):
+        answer = None
         
         for rule in QsoBot.bot_messages:
             if (re.match(QsoBot.bot_messages[rule][0],message)):
-                logging.info("qso_bot: message matched rule: %s" % rule)
-                answer = QsoBot.bot_messages[rule][1] + ' ='
+                answer = rule
                 break
-        logging.info("my answer is: %s" % answer)
+        
         return answer
+    
+    def simple_qso(self,message):
+        logging.info("simple_qso: message : %s" % message)
+        answer = QsoBot.bot_messages['DEFAULT'][1]
+        
+        rule = self.match_rules(message)
+        
+        if rule != None:
+            logging.info("simple_qso: message matched rule: %s" % rule)
+            answer = QsoBot.bot_messages[rule][1] + QsoBot.msg_end_char
+            logging.info("simple_qso: my answer is: %s" % answer)
+        return answer
+        
+    
                 
+    def qso(self,message):
+        return self.med_qso(message)
+        # self.simple_qso(message)
+        

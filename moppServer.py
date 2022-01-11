@@ -37,7 +37,7 @@ class MoppServer:
     DEBUG = 1
 
     def __init__(self, server):
-        self.clients = {} 
+        self.clients = {}
         self.server = server
         self.message = {
             'JOIN': r'k|hi',
@@ -48,8 +48,6 @@ class MoppServer:
             'GOODBYE': 'K e e',
             'HELLOSTRANGER': '?',
         }
-        
-
 
     def send_raw(self, client_id, raw_data):
         """send a data to a mopp client, data includes speed info
@@ -60,11 +58,12 @@ class MoppServer:
     def send_text(self, client_id, text_message, speed=None):
         """send a text to a mopp client, either with client's speed or supplied speed
         """
-        if speed == None:
-            speed = self.clients[client_id]['speed']
-        logging.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
-        for word in text_message.split(' '):
-            self.send_raw(client_id, Mopp.encode_text(speed, word))
+        if text_message != None:
+            if speed == None:
+                speed = self.clients[client_id]['speed']
+            logging.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
+            for word in text_message.split(' '):
+                self.send_raw(client_id, Mopp.encode_text(speed, word))
 
     def broadcast_text(self, text, excluded_client=None):
         """broadcast a text to everyone except one mopp client 
@@ -89,22 +88,39 @@ class MoppServer:
             logging.debug("%s, Broadcasting " % client_id)
             self.send_raw(client_id, data)
 
+    def client_joins(self, client_id, speed):
+        logging.debug("%s, client join request" % (client_id))
+        client_number = self.add_client(client_id, speed)
+
+        if int(client_number) > 0:
+            self.send_text(client_id, self.message['WELCOME'] % client_number)
+        else:
+            self.send_text(client_id, self.message['BUSY'], speed)
+
     def add_client(self, client_id, speed):
         client_number = str(len(self.clients) + 1)
         if (int(client_number) < self.MAX_CLIENTS):
-            logging.debug("%s, New client %s" % (client_id, client_number))
-            
-            self.clients[client_id]={'time':time.time(),'speed':speed,'bot':QsoBot()}
-            
-            self.send_text(client_id, self.message['WELCOME'] % client_number)
+            logging.debug("%s, adding client %s" % (client_id, client_number))
+
+            self.clients[client_id] = {
+                'time': time.time(),
+                'speed': speed,
+                'bot': QsoBot()
+            }
+
         else:
             logging.debug("ERR: maximum clients reached")
-            self.send_text(client_id, self.message['BUSY'], speed)
+            client_number = -1
+        return client_number
+
+    def client_leaves(self, client_id):
+        logging.debug("%s, client leaves" % client_id)
+        self.send_text(client_id, self.message['GOODBYE'])
+        self.remove_client(client_id)
 
     def remove_client(self, client_id):
         logging.debug("%s, removing client" % client_id)
-        self.send_text(client_id, self.message['GOODBYE'])
-        del self.clients[client_id]['bot']
+        # del self.clients[client_id]['bot']
         del self.clients[client_id]
 
     def renew_client(self, client_id, speed=None):
@@ -120,13 +136,10 @@ class MoppServer:
                 clients_to_be_removed.append(client_id)
 
         for client_id in clients_to_be_removed:
-            self.remove_client(client_id)
+            self.client_leaves(client_id)
 
     def is_message_type(self, message_key, message_text):
         return re.match(self.message[message_key], message_text)
-    
-
-        
 
     def process_message(self, input_bytes, addr):
 
@@ -140,16 +153,19 @@ class MoppServer:
         if client_id in self.clients:
             # if (message_text == ':bye') or (message_text == '<sk>') or (message_text == 'K'):
             if (self.is_message_type('LEAVE', message_text)):
-                self.remove_client(client_id)
+                self.client_leaves(client_id)
             else:
-                # broadcast this message to everyone else
-                # self.broadcast_raw(input_bytes, client_id)
-                self.send_text(client_id, self.clients[client_id]['bot'].qso(message_text))
+
+                # self.broadcast_raw(input_bytes, client_id) # broadcast this message to everyone else
+                answer = self.clients[client_id]['bot'].qso(message_text)
+                if answer != None and answer != '':
+                    logging.debug("%s, answer is: %s" % (client_id,answer))
+                    self.send_text(client_id, answer)
                 self.renew_client(client_id, speed)
         else:
             # if (message_text == 'k') or (message_text == 'hi'):
             if (self.is_message_type('JOIN', message_text)):
-                self.add_client(client_id, speed)
+                self.client_joins(client_id, speed)
             else:
                 logging.debug("%s, is unknown client, ignoring" % client_id)
                 # answer unknown client with own speed
@@ -159,8 +175,8 @@ class MoppServer:
 if __name__ == "__main__":
 
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
-    CLIENT_KEEPALIVE = 10 # timeout for server connections
-    
+    CLIENT_KEEPALIVE = 10  # timeout for server connections
+
     serverInstance = Server(keepalive=CLIENT_KEEPALIVE)
     serverInstance.start()  # TODO: error handling
 
