@@ -16,26 +16,26 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
    
 bot = QsoBot()
 # for msg in [
-#   'op here is markus',
+#   'op here is dan',
 #   'my qth is bern',
 #   'qth is luzern',
 #   'ur rst is 570',
 #   'rst is 570',
-#   'hi name here is markus']:
+#   'hi name here is marc']:
 #    bot.qso(msg)
   
   
 for msg in [
-  'op here is markus =',
-   'my qth', 'is',
-       'bern', '=',
-  'ur rst is 599 5nn = qth is luzern = wx ',
-    'is','sunny =',
-  'wx cloudy =',
-  'no rule ='
+  'op here is Gerd =',
+  #  'my qth', 'is',
+  #      'bern', '=',
+  # 'ur rst is 599 5nn = qth is luzern = wx ',
+  #   'is','sunny =',
+  # 'wx cloudy =',
+  # 'no rule ='
   # 'ur rst is 570',
   # 'rst is 570',
-  # 'hi name here is markus'
+  # 'hi name here is marc'
   ]:
    bot.med_qso(msg)
   
