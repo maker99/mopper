@@ -256,5 +256,6 @@ class QsoBot:
         return answer
 
     def qso(self, message):
-        return self.med_qso(message)
+        return self.midi_qso(message)
+        # return self.med_qso(message)
         # self.simple_qso(message)
