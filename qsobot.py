@@ -63,12 +63,12 @@ class QsoBot:
         'OP'      : 'om',
         'CALL'    : '',
         'OWN_RST' : '',
-        'OWN_NAME': 'Ger',
+        'OWN_NAME': 'ger',
         'OWN_WX'  : 'sunny',
         'OWN_RIG' : 'homebrew',
-        'OWN_temp': '21C',
-        'OWN_QTH' : 'Bristol',
-        'OWN_CALL': 'M0iv',
+        'OWN_temp': '21c',
+        'OWN_QTH' : 'bristol',
+        'OWN_CALL': 'm0iv',
         'UR_RST'  : '599'
     }
 
