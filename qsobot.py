@@ -38,8 +38,8 @@ class QsoBot:
             # 'DEFAULT' : [r'default','fb hw?'],
             },
         'MIDI': {
-            'NAME'        : [r'(op|name|am)(\s+(hr|here|is))*\s+(?P<OP>\S+)', 'hi there {OP}, my name is {OWN_NAME}',    ['op?',  'ur name pse?','dr om what is ur name?']],
-            'NAME_SIMPLE' : [r'(op|name|am)',                                 'dr om, ur name? = my name is {OWN_NAME}', ['op?',  'ur name pse?','dr om what is ur name?']],
+            'NAME'        : [r'(op|name|am)(\s+(hr|here|is))*\s+(?P<OP>\S+)', 'hi dr {OP} , my name is {OWN_NAME}',    ['op?',  'ur name pse?','dr om what is ur name?']],
+            'NAME_SIMPLE' : [r'(op|name|am)',                                 'dr om , ur name? = my name is {OWN_NAME}', ['op?',  'ur name pse?','dr om what is ur name?']],
             'QTH'         : [r'(loc|qth)(\s+(hr|here|is))*\s+(?P<QTH>\S+)',   'dr {OP} fm {QTH}, my qth is {OWN_QTH}',   ['qth?', 'ur qth pse',  'what is ur qth?']],
             'QTH_SIMPLE'  : [r'(loc|qth)',                                    'my qth is {OWN_QTH} = ur qth?',           ['qth?', 'ur qth pse',  'what is ur qth?']],
             'WX'          : [r'(wx)(\s+(hr|here|is))*\s+(?P<WX>\S+)',         'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
@@ -50,7 +50,7 @@ class QsoBot:
             'RIG_SIMPLE'  : [r'(rig)',                                        'my rig is {OWN_RIG}',                     ['rig?', 'ur rig pse?', 'what is ur rig?']],
             'RST'         : [r'(rst)(\s+(is))*\s+(?P<OWN_RST>\S+)',           'ur rst is {UR_RST}',                      ['rst?', 'hw?', 'hw cpy?']],
             'RST_SIMPLE'  : [r'(rst)',                                        'ur rst is {UR_RST} = dr {OP}, hw cpy?',   ['rst?', 'hw?', 'hw cpy?']],
-            'DEFAULT'     : [r'.',                                            '{OP}, hw cpy?',                           ['rst?', 'hw?', 'hw cpy?']],
+            'DEFAULT'     : [r'.',                                            'dr {OP} , hw cpy?',                           ['rst?', 'hw?', 'hw cpy?']],
         }
     }
 
