@@ -22,7 +22,7 @@ class QsoBot:
         'MED': {
             'QTH'         : [r'.*(qth|loc).*\sis\s+(\S+)'          ,'my qth is aachen'     ],
             'QTH0'        : [r'.*(qth|loc)'                        ,'qth?'                 ],
-            'NAME'        : [r'.*(name|op|qrz).*is\s+(?P<OP>\S+)'  ,'dr (?P<OP>) my name is bot' ],
+            'NAME'        : [r'.*(name|op|qrz).*is\s+(?P<OP>\S+)'  ,'dr om my name is bot' ],
             'NAME0'       : [r'.*(name|op|qrz)'                    ,'name ?'               ],
             'RST'         : [r'.*(rst).*is\s+(\S+)'                ,'ur rst is 599 5nn 5nn'],
             'RST0'        : [r'.*(rst)'                            ,'HW?'                  ],
@@ -36,7 +36,22 @@ class QsoBot:
             'DEFAULT'     : [r'default'                            ,'?'                    ],
             'NONE'        : [r'.*'                                 ,'?'                    ],
             # 'DEFAULT' : [r'default','fb hw?'],
-            }
+            },
+        'MIDI': {
+            'NAME'        : [r'(op|name|am)(\s+(hr|here|is))*\s+(?P<OP>\S+)', 'hi there {OP}, my name is {OWN_NAME}',    ['op?',  'ur name pse?','dr om what is ur name?']],
+            'NAME_SIMPLE' : [r'(op|name|am)',                                 'dr om, ur name? = my name is {OWN_NAME}', ['op?',  'ur name pse?','dr om what is ur name?']],
+            'QTH'         : [r'(loc|qth)(\s+(hr|here|is))*\s+(?P<QTH>\S+)',   'dr {OP} fm {QTH}, my qth is {OWN_QTH}',   ['qth?', 'ur qth pse',  'what is ur qth?']],
+            'QTH_SIMPLE'  : [r'(loc|qth)',                                    'my qth is {OWN_QTH} = ur qth?',           ['qth?', 'ur qth pse',  'what is ur qth?']],
+            'WX'          : [r'(wx)(\s+(hr|here|is))*\s+(?P<WX>\S+)',         'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
+            'WX_SIMPLE'   : [r'(wx)',                                         'wx hr is {OWN_WX}',                       ['wx?',  'ur wx pse?',  'what is ur wx?']],
+            'TMP'         : [r'(tmp)(\s+(hr|here|is))*\s+(?P<TMP>\S+(c|f)?)', 'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
+            'TMP_SIMPLE'  : [r'(temp)',                                       'temp hr is {OWN_TEMP}',                   ['temp?','ur temp pse?','what is ur temp?']],
+            'RIG'         : [r'(rig)(\s+(hr|here|is))*\s+(?P<RIG>\S+)',       'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
+            'RIG_SIMPLE'  : [r'(rig)',                                        'my rig is {OWN_RIG}',                     ['rig?', 'ur rig pse?', 'what is ur rig?']],
+            'RST'         : [r'(rst)(\s+(is))*\s+(?P<OWN_RST>\S+)',           'ur rst is {UR_RST}',                      ['rst?', 'hw?', 'hw cpy?']],
+            'RST_SIMPLE'  : [r'(rst)',                                        'ur rst is {UR_RST} = dr {OP}, hw cpy?',   ['rst?', 'hw?', 'hw cpy?']],
+            'DEFAULT'     : [r'.',                                            '{OP}, hw cpy?',                           ['rst?', 'hw?', 'hw cpy?']],
+        }
     }
 
     msg_break_re = r'.*=.*'
@@ -44,9 +59,121 @@ class QsoBot:
     msg_break_in_char = r'B'       # <bk> break in char
     msg_go_ahead_char = r'N'       # <kn> go ahead
 
+    memory_default = {
+        'OP'      : 'om',
+        'CALL'    : '',
+        'OWN_RST' : '',
+        'OWN_NAME': 'Ger',
+        'OWN_WX'  : 'sunny',
+        'OWN_RIG' : 'homebrew',
+        'OWN_temp': '21C',
+        'OWN_QTH' : 'Bristol',
+        'OWN_CALL': 'M0iv',
+        'UR_RST'  : '599'
+    }
+
+    
     def __init__(self) -> None:
         self.msg_buffer = ""
+        self.memory = self.memory_default
+        
         pass
+
+    def extract_vars(f) -> dict:
+        """extract named variables from a format string f
+        """
+        return {k: '' for k in re.findall(r'\{(\S+)\}', f)}
+
+
+    def learn(self,new):
+        for k in new.keys():
+            if new[k] or k not in self.memory.keys():
+                self.memory.update({k: new[k]})
+        return self.memory
+    
+    # print a format string with values filled from a given dict
+    def learn_and_answer(self, f: str, data_fields: dict) -> str:
+
+        # create an empty dict with all formats found in the format string
+        new_vars = QsoBot.extract_vars(f)
+        if isinstance(new_vars, dict):
+            self.learn(new_vars)
+        
+        # add any provided data - if we got a dict
+        if isinstance(data_fields, dict):
+            self.learn(data_fields)
+
+        return(f.format(**(self.memory)))    
+    
+    # return a regexp match as dict or string
+    def match_named_rules(pat, string: str) -> dict:
+        res = {}
+        r = re.search(pat, string)
+        if r:
+            if r.groupdict():
+                res = r.groupdict()
+            elif r.group():
+                res = r.group()
+
+        return res    
+
+    # scan through a list of rules and return the name of the first matching one
+    # or an emtpy list
+    def match_midi_rules(rules: dict, input: str) -> list:
+        
+        answer = []
+
+        for rule in rules.keys():
+            # print(f'apply rule: {rule} with {rules[rule][0]}')
+            res_dict = QsoBot.match_named_rules(rules[rule][0], input)
+            # print (f'match_rules result: {res}')
+            if len(res_dict) > 0:
+                answer = [rule, res_dict]
+                break
+
+        return answer
+
+    
+    def midi_qso(self,message):
+        """loops through inputs until break char is received, 
+        then analyze and try to answer
+
+        Args:
+            message ([string]): [input string from remote client]
+        """
+        answer = []
+        bot_category = 'MIDI'
+        rules = self.bot_messages[bot_category]
+
+        # append to buffer
+        logging.info(f"{bot_category}_qso: message : {message}")
+        self.msg_buffer += ' ' + message
+        logging.info(f"{bot_category}_qso: buffer : {self.msg_buffer}")
+        
+        
+        # extract all complete messages
+        while (re.match(QsoBot.msg_break_re, self.msg_buffer) != None):
+            (msg, self.msg_buffer) = self.msg_buffer.split(
+                QsoBot.msg_break_char, 1)
+            
+            ans = ''
+            (rule_name,input_fields) = QsoBot.match_midi_rules(rules, msg)
+            if rule_name:   
+                #input_fields=self.learn(input_fields) # learn new stuff
+                answer_template = rules[rule_name][1]
+                ans = self.learn_and_answer(answer_template, input_fields)
+
+                answer.append(ans)
+                logging.info("med_qso: rule: %s, answer is: %s" % (rule_name, ans))
+
+        break_string = ' ' + QsoBot.msg_break_char + ' '
+        answer_text = break_string.join(answer)
+        if len(answer_text) > 0:
+            answer_text += ' ' + QsoBot.msg_go_ahead_char
+
+        logging.info("med_qso: answer text is: %s" % (answer_text))
+        return answer_text
+
 
     def med_qso(self, message):
         """loops through inputs until break char is received, 

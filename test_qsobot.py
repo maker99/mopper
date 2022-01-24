@@ -25,21 +25,28 @@ bot = QsoBot()
 #    bot.qso(msg)
   
   
-for msg in [
-  'op here is Gerd =',
-  #  'my qth', 'is',
-  #      'bern', '=',
-  # 'ur rst is 599 5nn = qth is luzern = wx ',
-  #   'is','sunny =',
-  # 'wx cloudy =',
-  # 'no rule ='
-  # 'ur rst is 570',
-  # 'rst is 570',
-  # 'hi name here is marc'
-  ]:
-   bot.med_qso(msg)
-  
-  
-    
+# for msg in [
+#   'op here is Gerd =',
+#   #  'my qth', 'is',
+#   #      'bern', '=',
+#   # 'ur rst is 599 5nn = qth is luzern = wx ',
+#   #   'is','sunny =',
+#   # 'wx cloudy =',
+#   # 'no rule ='
+#   # 'ur rst is 570',
+#   # 'rst is 570',
+#   # 'hi name here is marc'
+#   ]:
+#    bot.med_qso(msg)
 
-                
+bot2 = QsoBot()
+for msg in [
+  'op here is Gerd =',  
+  'op is Gerd =',  
+  'hi name here is marc =',    
+  'op is Gerda = my qth is bonn =',  
+  'no rule =',
+  'ur rst is 509 =',
+  'rst  =',
+]:
+  bot2.midi_qso(msg)                
