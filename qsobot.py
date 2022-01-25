@@ -38,19 +38,26 @@ class QsoBot:
             # 'DEFAULT' : [r'default','fb hw?'],
             },
         'MIDI': {
-            'NAME'        : [r'(op|name|am)(\s+(hr|here|is))*\s+(?P<OP>\S+)', 'hi dr {OP} , my name is {OWN_NAME}',    ['op?',  'ur name pse?','dr om what is ur name?']],
-            'NAME_SIMPLE' : [r'(op|name|am)',                                 'dr om , ur name? = my name is {OWN_NAME}', ['op?',  'ur name pse?','dr om what is ur name?']],
-            'QTH'         : [r'(loc|qth)(\s+(hr|here|is))*\s+(?P<QTH>\S+)',   'dr {OP} fm {QTH}, my qth is {OWN_QTH}',   ['qth?', 'ur qth pse',  'what is ur qth?']],
-            'QTH_SIMPLE'  : [r'(loc|qth)',                                    'my qth is {OWN_QTH} = ur qth?',           ['qth?', 'ur qth pse',  'what is ur qth?']],
-            'WX'          : [r'(wx)(\s+(hr|here|is))*\s+(?P<WX>\S+)',         'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
-            'WX_SIMPLE'   : [r'(wx)',                                         'wx hr is {OWN_WX}',                       ['wx?',  'ur wx pse?',  'what is ur wx?']],
-            'TMP'         : [r'(tmp)(\s+(hr|here|is))*\s+(?P<TMP>\S+(c|f)?)', 'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
-            'TMP_SIMPLE'  : [r'(temp)',                                       'temp hr is {OWN_TEMP}',                   ['temp?','ur temp pse?','what is ur temp?']],
-            'RIG'         : [r'(rig)(\s+(hr|here|is))*\s+(?P<RIG>\S+)',       'my rig is {OWN_RIG}',                     ['rst?', 'hw?', 'hw cpy?']],
-            'RIG_SIMPLE'  : [r'(rig)',                                        'my rig is {OWN_RIG}',                     ['rig?', 'ur rig pse?', 'what is ur rig?']],
-            'RST'         : [r'(rst)(\s+(is))*\s+(?P<OWN_RST>\S+)',           'ur rst is {UR_RST}',                      ['rst?', 'hw?', 'hw cpy?']],
-            'RST_SIMPLE'  : [r'(rst)',                                        'ur rst is {UR_RST} = dr {OP}, hw cpy?',   ['rst?', 'hw?', 'hw cpy?']],
-            'DEFAULT'     : [r'.',                                            'dr {OP} , hw cpy?',                           ['rst?', 'hw?', 'hw cpy?']],
+            'CALL'       : [r'(call)(\s+(hr|here|is))*\s+(?P<CALL>\S+)'    , 'dr {OP} , my call is {OWN_CALL}'           ],
+            'CALL_SIMPLE': [r'(call)'                                      , 'dr om ,  my call is {OWN_CALL}'            ],
+            'NAME'       : [r'(op|name|am)(\s+(hr|here|is))*\s+(?P<OP>\S+)', 'dr {OP} , my name is {OWN_NAME}'           ],
+            'NAME_SIMPLE': [r'(op|name|am)'                                , 'dr om , ur name? = my name is {OWN_NAME}'  ],
+            'QTH'        : [r'(loc|qth)(\s+(hr|here|is))*\s+(?P<QTH>\S+)'  , 'dr {OP} fm {QTH} , my qth is {OWN_QTH}'    ],
+            'QTH_SIMPLE' : [r'(loc|qth)'                                   , 'my qth is {OWN_QTH} = ur qth?'             ],
+            'WX'         : [r'(wx)(\s+(hr|here|is))*\s+(?P<WX>\S+)'        , 'wx hr is {OWN_WX}'                         ],
+            'WX_SIMPLE'  : [r'(wx)'                                        , 'wx hr is {OWN_WX}'                         ],
+            'TMP'        : [r'(tmp)(\s+(hr|here|is))*\s+(?P<TMP>\S+(c|f)?)', 'temp hr is {OWN_TEMP}'                     ],
+            'TMP_SIMPLE' : [r'(temp)'                                      , 'temp hr is {OWN_TEMP}'                     ],
+            'RIG'        : [r'(rig)(\s+(hr|here|is))*\s+(?P<RIG>\S+)'      , 'my rig is {OWN_RIG}'                       ],
+            'RIG_SIMPLE' : [r'(rig)'                                       , 'my rig is {OWN_RIG}'                       ],
+            'ANT'        : [r'(ant)(\s+(hr|here|is))*\s+(?P<ANT>\S+)'      , 'my ant is {OWN_ANT}'                       ],
+            'ANT_SIMPLE' : [r'(ant)'                                       , 'my ant is {OWN_ANT}'                       ],
+            'RST'        : [r'(rst)(\s+(is))*\s+(?P<OWN_RST>\S+)'          , 'ur rst is {UR_RST}'                        ],
+            'RST_SIMPLE' : [r'(rst)'                                       , 'ur rst is {UR_RST} = dr {OP}, hw cpy?'     ],
+            'GETALL2'    : [r'\?\?\?'                                      , 'wx {OWN_WX} = temp {OWN_TEMP} = rig {OWN_RIG} = ant {OWN_ANT}' ],
+            'GETALL1'    : [r'\?\?'                                        , 'dr {OP} = rst {UR_RST} = qth {OWN_QTH} = name {OWN_NAME}' ],
+            'REPEAT'     : [r'\?'                                          , '{LAST_MSG}'                                ],
+            'DEFAULT'    : [r'.'                                           , 'dr {OP} , hw cpy?'                         ],
         }
     }
 
@@ -63,10 +70,12 @@ class QsoBot:
         'OP'      : 'om',
         'CALL'    : '',
         'OWN_RST' : '',
+        #----------------
         'OWN_NAME': 'ger',
         'OWN_WX'  : 'sunny',
         'OWN_RIG' : 'homebrew',
-        'OWN_temp': '21c',
+        'OWN_ANT' : 'jpole',
+        'OWN_TEMP': '21c',
         'OWN_QTH' : 'bristol',
         'OWN_CALL': 'm0iv',
         'UR_RST'  : '599'
@@ -168,6 +177,8 @@ class QsoBot:
 
         break_string = ' ' + QsoBot.msg_break_char + ' '
         answer_text = break_string.join(answer)
+        self.learn({'LAST_MSG': answer_text})
+        
         if len(answer_text) > 0:
             answer_text += ' ' + QsoBot.msg_go_ahead_char
 

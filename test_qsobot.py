@@ -45,8 +45,13 @@ for msg in [
   'op is Gerd =',  
   'hi name here is marc =',    
   'op is Gerda = my qth is bonn =',  
+  '? =',
   'no rule =',
   'ur rst is 509 =',
   'rst  =',
+  'ant is dipole  =',
+  '? =',
+  '?? =',
+  '??? =',
 ]:
   bot2.midi_qso(msg)                
