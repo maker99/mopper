@@ -66,27 +66,29 @@ class QsoBot:
     msg_break_in_char = r'B'       # <bk> break in char
     msg_go_ahead_char = r'N'       # <kn> go ahead
 
-    memory_default = {
-        'OP'      : 'om',
-        'CALL'    : '',
-        'OWN_RST' : '',
-        #----------------
-        'OWN_NAME': 'ger',
-        'OWN_WX'  : 'sunny',
-        'OWN_RIG' : 'homebrew',
-        'OWN_ANT' : 'jpole',
-        'OWN_TEMP': '21c',
-        'OWN_QTH' : 'bristol',
-        'OWN_CALL': 'm0iv',
-        'UR_RST'  : '599'
-    }
+
+    def __init__(self) -> None:
+        memory_default = {
+            'OP'      : 'om',
+            'CALL'    : '',
+            'OWN_RST' : '',
+            #----------------
+            'OWN_NAME': 'ger',
+            'OWN_WX'  : 'sunny',
+            'OWN_RIG' : 'homebrew',
+            'OWN_ANT' : 'jpole',
+            'OWN_TEMP': '21c',
+            'OWN_QTH' : 'bristol',
+            'OWN_CALL': 'm0iv',
+            'UR_RST'  : '599'
+        }
 
     
-    def __init__(self) -> None:
         self.msg_buffer = ""
-        self.memory = self.memory_default
-        
-        pass
+        self.memory = memory_default
+        logging.info(f"QsoBot: init : {self.memory}")
+        logging.info(f"QsoBot: init : {memory_default}")
+
 
     def extract_vars(f) -> dict:
         """extract named variables from a format string f

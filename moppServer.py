@@ -120,7 +120,7 @@ class MoppServer:
 
     def remove_client(self, client_id):
         logging.debug("%s, removing client" % client_id)
-        del self.clients[client_id]['bot']
+        # del self.clients[client_id]['bot']
         del self.clients[client_id]
 
     def renew_client(self, client_id, speed=None):

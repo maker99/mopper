@@ -40,6 +40,7 @@ bot = QsoBot()
 #    bot.med_qso(msg)
 
 bot2 = QsoBot()
+
 for msg in [
   'op here is Gerd =',  
   'op is Gerd =',  
@@ -54,4 +55,8 @@ for msg in [
   '?? =',
   '??? =',
 ]:
-  bot2.midi_qso(msg)                
+  bot2.midi_qso(msg)   
+
+print(bot2.memory)  
+           
+bot3 = QsoBot()
