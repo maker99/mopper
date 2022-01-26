@@ -153,8 +153,11 @@ class QsoBot:
             message ([string]): [input string from remote client]
         """
         answer = []
+        answer_text = ''
         bot_category = 'MIDI'
         rules = self.bot_messages[bot_category]
+        BREAK = ' ' + QsoBot.msg_break_char + ' '
+        END_CHAR = QsoBot.msg_go_ahead_char        
 
         # append to buffer
         logging.info(f"{bot_category}_qso: message : {message}")
@@ -167,22 +170,26 @@ class QsoBot:
             (msg, self.msg_buffer) = self.msg_buffer.split(
                 QsoBot.msg_break_char, 1)
             
-            ans = ''
-            (rule_name,input_fields) = QsoBot.match_midi_rules(rules, msg)
-            if rule_name:   
-                #input_fields=self.learn(input_fields) # learn new stuff
-                answer_template = rules[rule_name][1]
-                ans = self.learn_and_answer(answer_template, input_fields)
+            if len(msg) > 0:
+                
+                ans = ''
+                (rule_name,input_fields) = QsoBot.match_midi_rules(rules, msg)
+                
+                if rule_name:   
+                    #input_fields=self.learn(input_fields) # learn new stuff
+                    answer_template = rules[rule_name][1]
+                    ans = self.learn_and_answer(answer_template, input_fields)
 
-                answer.append(ans)
-                logging.info("med_qso: rule: %s, answer is: %s" % (rule_name, ans))
+                    if len(ans) > 0:
+                        answer.append(ans)
+                        logging.info("med_qso: rule: %s, answer is: %s" % (rule_name, ans))
 
-        break_string = ' ' + QsoBot.msg_break_char + ' '
-        answer_text = break_string.join(answer)
-        self.learn({'LAST_MSG': answer_text})
+        if len(answer) > 0:
+            answer_text = BREAK.join(answer)
+            self.learn({'LAST_MSG': answer_text})
         
         if len(answer_text) > 0:
-            answer_text += ' ' + QsoBot.msg_go_ahead_char
+            answer_text += ' ' + END_CHAR
 
         logging.info("med_qso: answer text is: %s" % (answer_text))
         return answer_text
