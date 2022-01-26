@@ -1,5 +1,7 @@
+from os import urandom
 import re
 import logging
+import random
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
@@ -73,27 +75,50 @@ class QsoBot:
             'CALL'    : '',
             'OWN_RST' : '',
             #----------------
-            'OWN_NAME': 'ger',
-            'OWN_WX'  : 'sunny',
-            'OWN_RIG' : 'homebrew',
-            'OWN_ANT' : 'jpole',
-            'OWN_TEMP': '21c',
-            'OWN_QTH' : 'bristol',
-            'OWN_CALL': 'm0iv',
-            'UR_RST'  : '599'
+            'OWN_NAME': 'ger,dan,rob,tom,fred,hans,gerd,',
+            'OWN_WX'  : 'sunny, cloudy     ,rainy,foggy,snowy,windy,chilly,',
+            'OWN_RIG' : 'qrp, homebrew,ic 7300,ic705,ftdx10',
+            'OWN_ANT' : 'jpole,dipole,random,kelemen,endfed,gp,hb9cv',
+            'OWN_TEMP': 'minus 10c, 0c, 5c, 21c,31c',
+            'OWN_QTH' : 'bristol,kent,london,aachen,wuerselen,herzogenrath,bonn,koeln',
+            'OWN_CALL': 'm0iv,da1bc,db2cd,dd3ef,de4fg,ia3tv',
+            'UR_RST'  : '599,509,518,579,589'
         }
 
     
         self.msg_buffer = ""
-        self.memory = memory_default
-        logging.info(f"QsoBot: init : {self.memory}")
-        logging.info(f"QsoBot: init : {memory_default}")
+        self.memory = {}
+        choosen = QsoBot.random_choice(memory_default)
+        self.learn(choosen)
+        logging.info(f"QsoBot: init : {choosen}")
+        # logging.info(f"QsoBot: init : {self.memory}")
 
 
     def extract_vars(f) -> dict:
         """extract named variables from a format string f
         """
         return {k: '' for k in re.findall(r'\{(\S+)\}', f)}
+    
+    def split_and_clean(input: str) -> list:
+        """split a string with commata and clean the results
+
+        Args:
+            input (str): [description]
+
+        Returns:
+            cleaned list: [description]
+        """        
+        return [x.strip() for x in input.split(',') if x.strip()]
+
+
+    def random_choice(op_data: dict) -> dict:
+        the_choosen = {}
+        for k in op_data.keys():
+            strings = QsoBot.split_and_clean(op_data[k])
+            if len(strings) > 0:
+                val = random.choice(strings)
+                the_choosen.update({k: val})
+        return the_choosen    
 
 
     def learn(self,new):

@@ -5,15 +5,16 @@ from qsobot import QsoBot
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
+
 # class QsoBot:
-    # bot_messages = {
-    #     'QTH' : ['qth','my qth is aachen'],
-    #     'NAME' : ['name|op','my name is bot'],
-    #     'RST' : ['rst','ur rst is 599 5NN 5NN'],
-    #     'NAME' : ['name|op','my name is bot'],
-    #     'DEFAULT' : ['default','fb = hw?'],
-    # }
-   
+# bot_messages = {
+#     'QTH' : ['qth','my qth is aachen'],
+#     'NAME' : ['name|op','my name is bot'],
+#     'RST' : ['rst','ur rst is 599 5NN 5NN'],
+#     'NAME' : ['name|op','my name is bot'],
+#     'DEFAULT' : ['default','fb = hw?'],
+# }
+
 bot = QsoBot()
 # for msg in [
 #   'op here is dan',
@@ -23,8 +24,8 @@ bot = QsoBot()
 #   'rst is 570',
 #   'hi name here is marc']:
 #    bot.qso(msg)
-  
-  
+
+
 # for msg in [
 #   'op here is Gerd =',
 #   #  'my qth', 'is',
@@ -42,21 +43,25 @@ bot = QsoBot()
 bot2 = QsoBot()
 
 for msg in [
-  'op here is Gerd =',  
-  'op is Gerd =',  
-  'hi name here is marc =',    
-  'op is Gerda = my qth is bonn =',  
-  '? =',
-  'no rule =',
-  'ur rst is 509 =',
-  'rst  =',
-  'ant is dipole  =',
-  '? =',
-  '?? =',
-  '??? =',
+    'op here is Gerd =',
+    'op is Gerd =',
+    'hi name here is marc =',
+    'op is Gerda = my qth is bonn =',
+    '? =',
+    'no rule =',
+    'ur rst is 509 =',
+    'rst  =',
+    'ant is dipole  =',
+    '? =',
+    '?? =',
+    '??? =',
 ]:
-  bot2.midi_qso(msg)   
+    bot2.midi_qso(msg)
 
-print(bot2.memory)  
-           
+# print(bot2.memory)
+
 bot3 = QsoBot()
+bot4 = QsoBot()
+bot5 = QsoBot()
+bot6 = QsoBot()
+bot7 = QsoBot()
