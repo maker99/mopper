@@ -27,7 +27,7 @@ bot = QsoBot()
 
 
 # for msg in [
-#   'op here is Gerd =',
+#   'op here is gerd =',
 #   #  'my qth', 'is',
 #   #      'bern', '=',
 #   # 'ur rst is 599 5nn = qth is luzern = wx ',
@@ -43,25 +43,36 @@ bot = QsoBot()
 bot2 = QsoBot()
 
 for msg in [
-    'op here is Gerd =',
-    'op is Gerd =',
+    'op here is dan =',
+    'op here is al =',
+    'op hr gard  gr rd gerd =',
+    'op here is gerd x =',
+    'op here is gerd sd sd =',
+    'op gerd =',
     'hi name here is marc =',
-    'op is Gerda = my qth is bonn =',
-    '? =',
-    'no rule =',
+    'op is gerda = my qth is bonn =',
+    'wx is dipole  =',
+    'temp is 10c  =',
+    'temp is 0c  =',
+    'temp is 1f  =',
+    'temp is -20c  =',
+    'temp is minus  19f  =',
+    'tmp is minus  19f  =',
+    'rig is ftdx 10   =',
+    'ant is dipole  =',
     'ur rst is 509 =',
     'rst  =',
-    'ant is dipole  =',
     '? =',
     '?? =',
     '??? =',
+    'no rule =',
 ]:
     bot2.midi_qso(msg)
 
 # print(bot2.memory)
 
-bot3 = QsoBot()
-bot4 = QsoBot()
-bot5 = QsoBot()
-bot6 = QsoBot()
-bot7 = QsoBot()
+# bot3 = QsoBot()
+# bot4 = QsoBot()
+# bot5 = QsoBot()
+# bot6 = QsoBot()
+# bot7 = QsoBot()
