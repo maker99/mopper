@@ -74,7 +74,7 @@ class MoppServer:
             if client_id == excluded_client:
                 continue
 
-            self.sendtext(client_id, text)
+            self.send_text(client_id, text)
         logging.debug("%s, Broadcasting %s" % (client_id, text))
 
     def broadcast_raw(self, data=b'', excluded_client=None):
