@@ -2,7 +2,7 @@ from os import urandom
 import re
 import logging
 import random
-from jinja2 import Template 
+import jinja2
 
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
@@ -40,31 +40,7 @@ class QsoBot:
             'NONE'        : [r'.*'                                 ,'?'                    ],
             # 'DEFAULT' : [r'default','fb hw?'],
             },
-        'MIDI_old': {
-            'CALL'       : [r'\b(call)\b.*\b(?P<CALL>\S+)\b'        , 'dr {OP} , my call is {OWN_CALL} {OWN_CALL} {OWN_CALL}'             ],
-            'CALL_SIMPLE': [r'\b(call)\b'                           , 'dr om ,  my call is {OWN_CALL} {OWN_CALL} {OWN_CALL}'              ],
-            'NAME'       : [r'\b(op|name|am)\b.*\b(?P<OP>\w{3,})\b' , 'dr {OP} , my name is {OWN_NAME} {OWN_NAME} {OWN_NAME}'             ],
-            'NAME_SIMPLE': [r'\b(op|name|am)\b'                     , 'dr om , ur name? = my name is {OWN_NAME} {OWN_NAME} {OWN_NAME}'    ],
-            'QTH'        : [r'\b(loc|qth)\b.*\b(?P<QTH>\w{3,})\b'   , 'dr {OP} fm {QTH} , my qth is {OWN_QTH} {OWN_QTH} {OWN_QTH}'        ],
-            'QTH_SIMPLE' : [r'\b(loc|qth)\b'                        , 'my qth is {OWN_QTH} {OWN_QTH} {OWN_QTH} = ur qth?'                 ],
-            'WX'         : [r'\b(wx)\b.*\b(?P<WX>\w{3,})\b'         , 'wx hr is {OWN_WX} {OWN_WX} {OWN_WX}'                               ],
-            'WX_SIMPLE'  : [r'\b(wx)\b'                             , 'wx hr is {OWN_WX} {OWN_WX} {OWN_WX}'                               ],
-            'TMP'        : [r'\b(tmp|temp)\b.*\b(?P<TMP>(-|\+|minus|plus\s*)?\w+\s*(c|f)?)\b' , 'temp hr is {OWN_TEMP} {OWN_TEMP} {OWN_TEMP}'                       ],
-            'TMP_SIMPLE' : [r'\b(tmp|temp)\b'                       , 'temp hr is {OWN_TEMP} {OWN_TEMP} {OWN_TEMP}'                       ],
-            'RIG'        : [r'\b(rig)\b.*\b(?P<RIG>\w{3,})\b'       , 'my rig is {OWN_RIG} {OWN_RIG} {OWN_RIG}'                           ],
-            'RIG_SIMPLE' : [r'\b(rig)\b'                            , 'my rig is {OWN_RIG} {OWN_RIG} {OWN_RIG}'                           ],
-            'ANT'        : [r'\b(ant)\b.*\b(?P<ANT>\w{3,})\b'       , 'my ant is {OWN_ANT} {OWN_ANT} {OWN_ANT}'                           ],
-            'ANT_SIMPLE' : [r'\b(ant)\b'                            , 'my ant is {OWN_ANT} {OWN_ANT} {OWN_ANT}'                           ],
-            'RST'        : [r'\b(rst)\b.*\b(?P<OWN_RST>\w{3,})\b'   , 'ur rst is {UR_RST} {UR_RST} {UR_RST}'                              ],
-            'RST_SIMPLE' : [r'\b(rst)\b'                            , 'ur rst is {UR_RST} {UR_RST} {UR_RST} = dr {OP} , hw cpy?'          ],
-            'GETALL2'    : [r'\?\?\?'                               , 'wx {OWN_WX} {OWN_WX} = temp {OWN_TEMP} {OWN_TEMP} = rig {OWN_RIG} {OWN_RIG} = ant {OWN_ANT} {OWN_ANT}' ],
-            'GETALL1'    : [r'\?\?'                                 , 'dr {OP} = rst {UR_RST} {UR_RST} = qth {OWN_QTH} {OWN_QTH} = name {OWN_NAME} {OWN_NAME}' ],
-            'REPEAT'     : [r'\?'                                   , '{LAST_MSG}'                                                        ],
-            'QRS'        : [r'qrs'                                  , 'slower'                                                        ],
-            'QRQ'        : [r'qrq'                                  , 'faster'                                                        ],
-            'QRZ'        : [r'qrz'                                  , '{OWN_CALL} {OWN_CALL} {OWN_CALL}'                                                        ],
-            'DEFAULT'    : [r'.'                                    , 'dr {OP} , hw cpy?'                                                 ],
-        },
+ 
         'MIDI': {
             'CALL'       : [r'\b(call)\b.*\b(?P<CALL>\S+)\b'        , 'dr {{OP}} , my call is {{OWN_CALL} {{OWN_CALL}} {{OWN_CALL}}'             ],
             'CALL_SIMPLE': [r'\b(call)\b'                           , 'dr om ,  my call is {{OWN_CALL}} {{OWN_CALL}} {{OWN_CALL}}'              ],
@@ -109,7 +85,7 @@ class QsoBot:
             'OWN_RIG' : 'qrp, homebrew,ic 7300,ic705,ftdx10',
             'OWN_ANT' : 'jpole,dipole,random,kelemen,endfed,gp,hb9cv,trap dipole,flagpole,vertical,',
             'OWN_TEMP': 'minus 10c, 0c, 5c, 21c,31c',
-            'OWN_QTH' : 'bristol,kent,london,aachen,wuerselen,simmerath,brand,kiev,herzogenrath,bonn,koeln,cologne,bern,hamburg,',
+            'OWN_QTH' : 'bristol,kent,london,aachen,wuerselen,simmerath,brand,kiev,herzogenrath,bonn,koeln,cologne,bern,hamburg,pley',
             'OWN_CALL': 'm0iv,da1bc,db2cd,dd3ef,de4fg,ia3tv',
             'UR_RST'  : '599,509,518,579,589',
             'SPEED_DIFF'  : '0',
@@ -169,8 +145,7 @@ class QsoBot:
         # add any provided data - if we got a dict
         if isinstance(data_fields, dict):
             self.learn(data_fields)
-        # answer = f.format(**(self.memory))
-        answer =  Template(f).render(self.memory)
+        answer =  jinja2.Template(f).render(self.memory)
         return answer    
     
     # return a regexp match as dict or string
