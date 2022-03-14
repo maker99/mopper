@@ -43,6 +43,8 @@ bot = QsoBot()
 bot2 = QsoBot()
 
 for msg in [
+    'call =',
+    'op =',
     'op here is dan =',
     'op here is al =',
     'op hr gard  gr rd gerd =',
@@ -50,6 +52,7 @@ for msg in [
     'op here is gerd sd sd =',
     'op gerd =',
     'hi name here is marc =',
+    'my qth =',
     'op is gerda = my qth is bonn =',
     'wx is dipole  =',
     'temp is 10c  =',
@@ -60,12 +63,16 @@ for msg in [
     'tmp is minus  19f  =',
     'rig is ftdx 10   =',
     'ant is dipole  =',
-    'ur rst is 509 =',
     'rst  =',
+    'ur rst is 509 =',
     '? =',
     '?? =',
     '??? =',
     'no rule =',
+    # 'call is da1bc=',
+    'qrs =',
+    'qrz =',
+    'qrq =',
 ]:
     bot2.midi_qso(msg)
 

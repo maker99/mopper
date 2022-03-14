@@ -9,62 +9,59 @@ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
 class QsoBot:
     bot_messages = {
-
-        'SIMPLE': {
-            'QTH0'        : [r'.*(qth|loc)'                ,'my qth is aachen'     ],
-            'NAME0'       : [r'.*(name|op|qrz)'            ,'my name is bot'       ],
-            'RST'         : [r'.*(rst)'                    ,'ur rst is 599 5nn 5nn'],
-            'WX'          : [r'.*(wx)'                     ,'wx is cloudy'         ],
-            'TEMP'        : [r'.*(temp)'                   ,'temp is 5C'           ],
-            'RIG'         : [r'.*(rig)'                    ,'rig is FT-857d'       ],
-            'TRAIN_WORDS' : [r'.*(:w)'                     ,'rig rig rig'          ],
-            'DEFAULT'     : [r'default'                    ,'?'                    ],
-            'NONE'        : [r'.*'                         ,'?'                    ],
-            # 'DEFAULT' : [r'default','fb hw?'],
-            },
-        'MED': {
-            'QTH'         : [r'.*(qth|loc).*\sis\s+(\S+)'          ,'my qth is aachen'     ],
-            'QTH0'        : [r'.*(qth|loc)'                        ,'qth?'                 ],
-            'NAME'        : [r'.*(name|op|qrz).*is\s+(?P<OP>\S+)'  ,'dr om my name is bot' ],
-            'NAME0'       : [r'.*(name|op|qrz)'                    ,'name ?'               ],
-            'RST'         : [r'.*(rst).*is\s+(\S+)'                ,'ur rst is 599 5nn 5nn'],
-            'RST0'        : [r'.*(rst)'                            ,'HW?'                  ],
-            'WX'          : [r'.*(wx).*is\s+(\S+)'                 ,'wx is cloudy'         ],
-            'WX0'         : [r'.*(wx)'                             ,'wx?'                  ],
-            'TEMP'        : [r'.*(temp).*is\s+(\S+)'               ,'temp is 5C'           ],
-            'TEMP0'       : [r'.*(temp)'                           ,'temp?'                ],
-            'RIG'         : [r'.*(rig).*is\s+(\S+)'                ,'rig is FT-857d'       ],
-            'RIG0'        : [r'.*(rig)'                            ,'rig?'                 ],
-            'TRAIN_WORDS' : [r'.*(:w)'                             ,'rig rig rig'          ],
-            'DEFAULT'     : [r'default'                            ,'?'                    ],
-            'NONE'        : [r'.*'                                 ,'?'                    ],
-            # 'DEFAULT' : [r'default','fb hw?'],
-            },
- 
+        'macros' : { 
+            'DEFAULT' : """
+                {%- macro REP(_MYVAL,_REPEAT) -%} 
+                    {{- _MYVAL| R(_REPEAT or RPT) -}} 
+                {%- endmacro -%}
+                
+                {%- macro RND(_LIST) -%}
+                    {{ _LIST | random }}
+                {%- endmacro -%}
+                    
+                {%- macro GREETING(_TIME) -%}
+                    {{_TIME or "gd"}} dr {{OM or "om"}} es {{RND(['tnx','tks'])}} {{RND(['fer','fr'])}} the call
+                {%- endmacro -%}
+                        
+                {%- macro UR(_RST,_REPEAT) -%}
+                    ur rst {{ RND(['is ', '']) }}{{ REP(_RST or "599",_REPEAT or RPT)}}
+                {%- endmacro -%}
+                    
+                {%- macro FM_QTH() -%}
+                    {%- if QTH -%}
+                        fm {{QTH}}
+                    {%- else -%}
+                        , ur qth?
+                    {%- endif -%}
+                {%- endmacro -%}
+                
+                {%- macro WHAT_RST() -%}
+                    {%- if not OWN_RST -%}
+                        = hw cpy?
+                    {%- endif -%}
+                {%- endmacro -%}
+                    
+                {%- macro ANS(_MYVAR,_VAL,_REPEAT) -%}
+                    {{ RND(['the ', 'my ', ' ']) }}{{ _MYVAR }} {{ RND(['hr is ', 'is ','hr ', '']) }}{{ REP(_VAL or "nice",_REPEAT or RPT)}}
+                {%- endmacro -%}
+            """
+        },
         'MIDI': {
-            'CALL'       : [r'\b(call)\b.*\b(?P<CALL>\S+)\b'        , 'dr {{OP}} , my call is {{OWN_CALL} {{OWN_CALL}} {{OWN_CALL}}'             ],
-            'CALL_SIMPLE': [r'\b(call)\b'                           , 'dr om ,  my call is {{OWN_CALL}} {{OWN_CALL}} {{OWN_CALL}}'              ],
-            'NAME'       : [r'\b(op|name|am)\b.*\b(?P<OP>\w{3,})\b' , 'dr {{OP}} , my name is {{OWN_NAME}} {{OWN_NAME}} {{OWN_NAME}}'             ],
-            'NAME_SIMPLE': [r'\b(op|name|am)\b'                     , 'dr om , ur name? = my name is {{OWN_NAME}} {{OWN_NAME}} {{OWN_NAME}}'    ],
-            'QTH'        : [r'\b(loc|qth)\b.*\b(?P<QTH>\w{3,})\b'   , 'dr {{OP}} fm {{QTH}} , my qth is {{OWN_QTH}} {{OWN_QTH}} {{OWN_QTH}}'        ],
-            'QTH_SIMPLE' : [r'\b(loc|qth)\b'                        , 'my qth is {{OWN_QTH}} {{OWN_QTH}} {{OWN_QTH}} = ur qth?'                 ],
-            'WX'         : [r'\b(wx)\b.*\b(?P<WX>\w{3,})\b'         , 'wx hr is {{OWN_WX}} {{OWN_WX}} {{OWN_WX}}'                               ],
-            'WX_SIMPLE'  : [r'\b(wx)\b'                             , 'wx hr is {{OWN_WX}} {{OWN_WX}} {{OWN_WX}}'                               ],
-            'TMP'        : [r'\b(tmp|temp)\b.*\b(?P<TMP>(-|\+|minus|plus\s*)?\w+\s*(c|f)?)\b' , 'temp hr is {{OWN_TEMP}} {{OWN_TEMP}} {{OWN_TEMP}}'                       ],
-            'TMP_SIMPLE' : [r'\b(tmp|temp)\b'                       , 'temp hr is {{OWN_TEMP}} {{OWN_TEMP}} {{OWN_TEMP}}'                       ],
-            'RIG'        : [r'\b(rig)\b.*\b(?P<RIG>\w{3,})\b'       , 'my rig is {{OWN_RIG}} {{OWN_RIG}} {{OWN_RIG}}'                           ],
-            'RIG_SIMPLE' : [r'\b(rig)\b'                            , 'my rig is {{OWN_RIG}} {{OWN_RIG}} {{OWN_RIG}}'                           ],
-            'ANT'        : [r'\b(ant)\b.*\b(?P<ANT>\w{3,})\b'       , 'my ant is {{OWN_ANT}} {{OWN_ANT}} {{OWN_ANT}}'                           ],
-            'ANT_SIMPLE' : [r'\b(ant)\b'                            , 'my ant is {{OWN_ANT}} {{OWN_ANT}} {{OWN_ANT}}'                           ],
-            'RST'        : [r'\b(rst)\b.*\b(?P<OWN_RST>\w{3,})\b'   , 'ur rst is {{UR_RST}} {{UR_RST}} {{UR_RST}}'                              ],
-            'RST_SIMPLE' : [r'\b(rst)\b'                            , 'ur rst is {{UR_RST}} {{UR_RST}} {{UR_RST}} = dr {{OP}} , hw cpy?'          ],
-            'GETALL2'    : [r'\?\?\?'                               , 'wx {{OWN_WX}} {{OWN_WX}} = temp {{OWN_TEMP}} {{OWN_TEMP}} = rig {{OWN_RIG}} {{OWN_RIG}} = ant {{OWN_ANT}} {{OWN_ANT}}' ],
-            'GETALL1'    : [r'\?\?'                                 , 'dr {{OP}} = rst {{UR_RST}} {{UR_RST}} = qth {{OWN_QTH}} {{OWN_QTH}} = name {{OWN_NAME}} {{OWN_NAME}}' ],
-            'REPEAT'     : [r'\?'                                   , '{{LAST_MSG}}'                                                        ],
-            'QRS'        : [r'qrs'                                  , 'slower'                                                        ],
-            'QRQ'        : [r'qrq'                                  , 'faster'                                                        ],
-            'QRZ'        : [r'qrz'                                  , '{{OWN_CALL}} {{OWN_CALL}} {{OWN_CALL}}'                                                        ],
-            'DEFAULT'    : [r'.'                                    , 'dr {{OP}} , hw cpy?'                                                 ],
+            'CALL'       : [r'\b(call)\b(.*\b(?P<CALL>\S+)\b)?'        , 'dr {{OP}} {{5|S()}} my call is {{REP(OWN_CALL)}} {{0|S()}}'],
+            'NAME'       : [r'\b(op|name|am)\b(.*\b(?P<OP>\w{3,})\b)?' , 'dr {{OP}} my name is {{REP(OWN_NAME)}}'                    ],
+            'QTH'        : [r'\b(loc|qth)\b(.*\b(?P<QTH>\w{3,})\b)?'   , 'dr {{OP}} {{FM_QTH()}} = my qth is {{REP(OWN_QTH)}}'       ],
+            'WX'         : [r'\b(wx)\b(.*\b(?P<WX>\w{3,})\b)?'         , 'wx hr is {{REP(OWN_WX)}}'                                  ],
+            'TMP'        : [r'\b(tmp|temp)\b(.*\b(?P<TMP>(-|\+|minus|plus\s*)?\w+\s*(c|f)?)\b)?' , 'temp hr is {{REP(OWN_TEMP)}}'    ],
+            'RIG'        : [r'\b(rig)\b(.*\b(?P<RIG>\w{3,})\b)?'       , 'my rig is {{REP(OWN_RIG)}}'                                ],
+            'ANT'        : [r'\b(ant)\b(.*\b(?P<ANT>\w{3,})\b)?'       , 'my ant is {{REP(OWN_ANT)}}'                                ],
+            'RST'        : [r'\b(rst)\b(.*\b(?P<OWN_RST>\w{3,})\b)?'   , 'ur rst is {{REP(UR_RST)}} {{WHAT_RST()}}'                  ],
+            'GETALL2'    : [r'\?\?\?'                                  , 'wx {{REP(OWN_WX)}} = temp {{REP(OWN_TEMP)}} = rig {{REP(OWN_RIG)}} = ant {{REP(OWN_ANT)}}' ],
+            'GETALL1'    : [r'\?\?'                                    , 'dr {{OP}} = rst {{REP(UR_RST)}} = qth {{REP(OWN_QTH)}} = name {{REP(OWN_NAME)}}' ],
+            'REPEAT'     : [r'\?'                                      , '{{LAST_MSG}}'                                              ],
+            'QRS'        : [r'qrs'                                     , 'slower'                                                    ],
+            'QRQ'        : [r'qrq'                                     , 'faster'                                                    ],
+            'QRZ'        : [r'qrz'                                     , '{{OWN_CALL | R(RPT)}}'                                     ],
+            'DEFAULT'    : [r'.'                                       , 'dr {{OP}} , hw cpy?'                                       ],
         }
     }
 
@@ -75,7 +72,19 @@ class QsoBot:
 
 
     def __init__(self) -> None:
-        memory_default = {
+        """
+        init a new bot
+            each bot has it's own characteristics, 
+                for example: name, call, qth,...
+                and can remember those data sent by the remote op
+            this allows to answer on data the bot received or to ask for 
+                data not yet received
+            using jinja2 and some filters allows to create different answers based on
+                randomly chosing from a set of answer strings.
+        """        
+        
+        # the 
+        bot_characteristics = {
             'OP'      : 'om',
             'CALL'    : '',
             'OWN_RST' : '',
@@ -88,25 +97,86 @@ class QsoBot:
             'OWN_QTH' : 'bristol,kent,london,aachen,wuerselen,simmerath,brand,kiev,herzogenrath,bonn,koeln,cologne,bern,hamburg,pley',
             'OWN_CALL': 'm0iv,da1bc,db2cd,dd3ef,de4fg,ia3tv',
             'UR_RST'  : '599,509,518,579,589',
-            'SPEED_DIFF'  : '0',
+            'SPEED'   : '20', # allows to select a different defaults speed than remote op
+            'SPEED_DIFF'  : '0', # allows to select a different defaults speed than remote op
+            'RPT'     : '3',
         }
 
     
         self.msg_buffer = ""
         self.memory = {}
-        choosen = QsoBot.random_choice(memory_default)
-        self.learn(choosen)
-        logging.info(f"QsoBot: init : {choosen}")
+        choosen_bot = QsoBot.mix_an_op(bot_characteristics)
+        self.learn(choosen_bot)
+        logging.info(f"QsoBot: init : {choosen_bot}")
         # logging.info(f"QsoBot: init : {self.memory}")
+        
+        # init jinja2 environment and add filters
+        self.j2env = jinja2.Environment()
+        self.j2env.filters["R"] = self.j2_repeat_filter
+        self.j2env.filters["S"] = self.j2_speed_setter_relative
+        self.j2env.filters["A"] = self.j2_speed_setter_absolute
+
+
+    def render(self, f):
+        macros = self.bot_messages['macros']['DEFAULT']
+        answer = self.j2env.from_string(macros+f).render(self.memory)
+        p = re.compile('\s+' )
+        answer = p.sub(' ', answer) 
+        return answer   
+        
+        
+    def j2_repeat_filter(self,value, repeat=1):
+        """
+       Jinja2 filter - repeat the input value several times, joined with spaces
+
+        repeat value defaults to 1
+
+        :param value: string to be repeated
+        :param repeat: repetition
+        :return: string
+        """
+
+        return ' '.join([str(value)] * int(repeat))
+    
+    
+    def j2_speed_setter_relative(self,speed_diff: int = 9999):
+        """
+        jinja2 filter to set relative cw speed 
+        :param value: value to be repeated
+        :param repeat: how often to repeat
+        :return: string
+        """
+        self.memory['SPEED_DIFF'] = speed_diff
+        logging.debug(f"j2_speed_setter_relative: {self.memory['SPEED_DIFF']}")
+        
+        return ''
+
+
+    def j2_speed_setter_absolute(self,speed: int = 9999):
+        """
+        jinja2 filter to set relative cw speed 
+        :param value: value to be repeated
+        :param repeat: how often to repeat
+        :return: string
+        """
+        if speed == 0 :
+            self.memory['SPEED_DIFF'] = 0
+        else:
+            self.memory['SPEED_DIFF'] = speed - self.memory['SPEED_DIFF']
+        logging.debug(f"jinja2 filter to set relative cw speed: {self.memory['SPEED_DIFF']}")
+        
+        return ''
 
 
     def extract_vars(f) -> dict:
         """extract named variables from a format string f
+
         """
         return {k: '' for k in re.findall(r'\{(\S+)\}', f)}
     
-    def split_and_clean(input: str) -> list:
-        """split a string with commata and clean the results
+    
+    def split_and_strip(input: str) -> list:
+        """split a string at commata and strip leading and trailing spaces
 
         Args:
             input (str): [description]
@@ -118,14 +188,23 @@ class QsoBot:
         return [x.strip() for x in input.split(',') if x.strip()]
 
 
-    def random_choice(op_data: dict) -> dict:
-        the_choosen = {}
+    def mix_an_op(op_data: dict) -> dict:
+        """select and return random values for all op's characteristics
+            for example: name, call, rig, ant, qth, ...
+            
+        Args:
+            op_data (dict): a list of characteristics for ops
+
+        Returns:
+            dict: one randomly chosen value for each characteristic
+        """        
+        the_choosen_op = {}
         for k in op_data.keys():
-            strings = QsoBot.split_and_clean(op_data[k])
+            strings = QsoBot.split_and_strip(op_data[k])
             if len(strings) > 0:
                 val = random.choice(strings)
-                the_choosen.update({k: val})
-        return the_choosen    
+                the_choosen_op.update({k: val})
+        return the_choosen_op    
 
 
     def learn(self,new):
@@ -133,6 +212,7 @@ class QsoBot:
             if new[k] or k not in self.memory.keys():
                 self.memory.update({k: new[k]})
         return self.memory
+    
     
     # print a format string with values filled from a given dict
     def learn_and_answer(self, f: str, data_fields: dict) -> str:
@@ -145,9 +225,10 @@ class QsoBot:
         # add any provided data - if we got a dict
         if isinstance(data_fields, dict):
             self.learn(data_fields)
-        answer =  jinja2.Template(f).render(self.memory)
-        return answer    
-    
+        answer =  self.render(f)
+        return answer 
+
+
     # return a regexp match as dict or string
     def match_named_rules(pat, string: str) -> dict:
         res = {}
@@ -159,6 +240,7 @@ class QsoBot:
                 res = r.group()
 
         return res    
+
 
     # scan through a list of rules and return the name of the first matching one
     # or an emtpy list
@@ -178,11 +260,20 @@ class QsoBot:
 
     
     def midi_qso(self,message):
-        """loops through inputs until break char is received, 
-        then analyze and try to answer
+        """conduct a qso based on input from the remote op
+        how it works:
+        loop through input and split it into segments based on the break char
+         
+            analyze each segment
+                match it to the given rules, e.g. OP, QTH, WX, ... 
+                extract values (e.g. name, qth, rst, ... ) and remember them
+                and answer the segment
+                
+        over time we collect more details and can put these into our answers   
+            for example: when we know the name we can replease 'om' in 'dr om' by the op's name
 
         Args:
-            message ([string]): [input string from remote client]
+            message ([string]): [input string from remote operator]
         """
         answer = []
         answer_text = ''
@@ -214,7 +305,7 @@ class QsoBot:
 
                     if len(ans) > 0:
                         answer.append(ans)
-                        logging.info("med_qso: rule: %s, answer is: %s" % (rule_name, ans))
+                        logging.info("midi_qso: rule: %s, answer is: %s" % (rule_name, ans))
 
         if len(answer) > 0:
             answer_text = BREAK.join(answer)
@@ -223,91 +314,6 @@ class QsoBot:
         if len(answer_text) > 0:
             answer_text += ' ' + END_CHAR
 
-        logging.info("med_qso: answer text is: %s" % (answer_text))
+        logging.info("midi_qso: answer text is: %s" % (answer_text))
         return answer_text
 
-
-    def med_qso(self, message):
-        """loops through inputs until break char is received, 
-        then analyze and try to answer
-
-        Args:
-            message ([string]): [input string from remote client]
-        """
-        answer = []
-        bot_category = 'MED'
-
-        # append to buffer
-        logging.info("med_qso: message : %s" % message)
-        self.msg_buffer += ' ' + message
-        logging.info("med_qso: buffer : %s" % self.msg_buffer)
-        # extract complete message
-        # Todo: loop over
-        while (re.match(QsoBot.msg_break_re, self.msg_buffer) != None):
-            (msg, self.msg_buffer) = self.msg_buffer.split(
-                QsoBot.msg_break_char, 1)
-            rule = self.match_rules(msg, bot_category)
-            if rule == None:
-                rule = 'NONE'
-
-            # answer.append(QsoBot.bot_messages[rule][1])
-            # substitute the message with the
-            answer.append(self.answer_rules(msg,rule,bot_category))
-            logging.info("med_qso: rule: %s, answer is: %s" % (rule, answer))
-
-        break_string = ' ' + QsoBot.msg_break_char + ' '
-        answer_text = break_string.join(answer)
-        if len(answer_text) > 0:
-            answer_text += ' ' + QsoBot.msg_go_ahead_char
-
-        logging.info("med_qso: answer text is: %s" % (answer_text))
-        return answer_text
-
-    def answer_rules(self, message, rule, category='SIMPLE'):
-        answer = None
-
-        answer = re.sub(QsoBot.bot_messages[category][rule][0],
-                        QsoBot.bot_messages[category][rule][1],
-                        message)
-
-        return answer
-
-    # match anywhere in the string
-    def search_rules(self, message, category='SIMPLE'):
-        answer = None
-
-        for rule in QsoBot.bot_messages:
-            if (re.search(QsoBot.bot_messages[category][rule][0], message)):
-                answer = rule
-                break
-
-        return answer
-
-
-    # matches only on starting of string
-    def match_rules(self, message, category='SIMPLE'):
-        answer = None
-
-        for rule in QsoBot.bot_messages[category]:
-            if (re.match(QsoBot.bot_messages[category][rule][0], message)):
-                answer = rule
-                break
-
-        return answer
-
-    def simple_qso(self, message):
-        logging.info("simple_qso: message : %s" % message)
-        answer = QsoBot.bot_messages['DEFAULT'][1]
-
-        rule = self.match_rules(message)
-
-        if rule != None:
-            logging.info("simple_qso: message matched rule: %s" % rule)
-            answer = QsoBot.bot_messages[rule][1] + QsoBot.msg_split_char
-            logging.info("simple_qso: my answer is: %s" % answer)
-        return answer
-
-    def qso(self, message):
-        return self.midi_qso(message)
-        # return self.med_qso(message)
-        # self.simple_qso(message)
