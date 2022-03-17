@@ -62,7 +62,7 @@ class MoppServer:
             if speed == None:
                 speed = self.clients[client_id]['speed']
             logging.debug('%s, < "%s"(%s wpm)' % (client_id, text_message, speed))
-            for word in text_message.split(' '):
+            for word in text_message.split():
                 self.send_raw(client_id, Mopp.encode_text(speed, word))
 
     def broadcast_text(self, text, excluded_client=None):
