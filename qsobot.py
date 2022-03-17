@@ -255,7 +255,7 @@ class QsoBot:
 
     # scan through a list of rules and return the name of the first matching one
     # or an emtpy list
-    def match_midi_rules(rules: dict, input: str) -> list:
+    def match_rules(rules: dict, input: str) -> list:
         
         answer = []
 
@@ -307,7 +307,7 @@ class QsoBot:
             if len(msg) > 0:
                 
                 ans = ''
-                (rule_name,input_fields) = QsoBot.match_midi_rules(rules, msg)
+                (rule_name,input_fields) = QsoBot.match_rules(rules, msg)
                 
                 if rule_name:   
                     #input_fields=self.learn(input_fields) # learn new stuff
@@ -316,7 +316,7 @@ class QsoBot:
 
                     if len(ans) > 0:
                         answer.append(ans)
-                        logging.info("midi_qso: rule: %s, answer is: %s" % (rule_name, ans))
+                        logging.info("qso: rule: %s, answer is: %s" % (rule_name, ans))
 
         if len(answer) > 0:
             answer_text = BREAK.join(answer)
@@ -325,6 +325,11 @@ class QsoBot:
         if len(answer_text) > 0:
             answer_text += ' ' + END_CHAR
 
-        logging.info("midi_qso: answer text is: %s" % (answer_text))
+        # remove leading and trailing whitepspace and
+        # shrink all white space to single spaces one
+        answer_text = answer_text.strip()
+        answer_text = ' '.join(answer_text.split())
+        
+        logging.info("qso: answer text is: %s" % (answer_text))
         return answer_text
 
