@@ -44,24 +44,32 @@ class QsoBot:
                 {%- macro ANS(_MYVAR,_VAL,_REPEAT) -%}
                     {{ RND(['the ', 'my ', ' ']) }}{{ _MYVAR }} {{ RND(['hr is ', 'is ','hr ', '']) }}{{ REP(_VAL or "nice",_REPEAT or RPT)}}
                 {%- endmacro -%}
+                
+                {%- macro DR_OP() -%}
+                    dr {{OP|default('om')}} 
+                {%- endmacro -%}
+                               
+                {%- macro CALL() -%}
+                    {{DR_OP()}} my call is {{5|S()}}{{REP(OWN_CALL)}} {{0|S()}}
+                {%- endmacro -%}
             """
         },
         'MIDI': {
-            'CALL'       : [r'\b(call)\b(.*\b(?P<CALL>\S+)\b)?'        , 'dr {{OP}} {{5|S()}} my call is {{REP(OWN_CALL)}} {{0|S()}}'],
-            'NAME'       : [r'\b(op|name|am)\b(.*\b(?P<OP>\w{3,})\b)?' , 'dr {{OP}} my name is {{REP(OWN_NAME)}}'                    ],
-            'QTH'        : [r'\b(loc|qth)\b(.*\b(?P<QTH>\w{3,})\b)?'   , 'dr {{OP}} {{FM_QTH()}} = my qth is {{REP(OWN_QTH)}}'       ],
+            'CALL'       : [r'\b(call)\b(.*\b(?P<CALL>\S+)\b)?'        , '{{CALL()}}'],
+            'NAME'       : [r'\b(op|name|am)\b(.*\b(?P<OP>\w{3,})\b)?' , '{{DR_OP()}} my name is {{REP(OWN_NAME)}}'                    ],
+            'QTH'        : [r'\b(loc|qth)\b(.*\b(?P<QTH>\w{3,})\b)?'   , '{{DR_OP()}} {{FM_QTH()}} = my qth is {{REP(OWN_QTH)}}'       ],
             'WX'         : [r'\b(wx)\b(.*\b(?P<WX>\w{3,})\b)?'         , 'wx hr is {{REP(OWN_WX)}}'                                  ],
             'TMP'        : [r'\b(tmp|temp)\b(.*\b(?P<TMP>(-|\+|minus|plus\s*)?\w+\s*(c|f)?)\b)?' , 'temp hr is {{REP(OWN_TEMP)}}'    ],
             'RIG'        : [r'\b(rig)\b(.*\b(?P<RIG>\w{3,})\b)?'       , 'my rig is {{REP(OWN_RIG)}}'                                ],
             'ANT'        : [r'\b(ant)\b(.*\b(?P<ANT>\w{3,})\b)?'       , 'my ant is {{REP(OWN_ANT)}}'                                ],
             'RST'        : [r'\b(rst)\b(.*\b(?P<OWN_RST>\w{3,})\b)?'   , 'ur rst is {{REP(UR_RST)}} {{WHAT_RST()}}'                  ],
             'GETALL2'    : [r'\?\?\?'                                  , 'wx {{REP(OWN_WX)}} = temp {{REP(OWN_TEMP)}} = rig {{REP(OWN_RIG)}} = ant {{REP(OWN_ANT)}}' ],
-            'GETALL1'    : [r'\?\?'                                    , 'dr {{OP}} = rst {{REP(UR_RST)}} = qth {{REP(OWN_QTH)}} = name {{REP(OWN_NAME)}}' ],
+            'GETALL1'    : [r'\?\?'                                    , '{{DR_OP()}} = rst {{REP(UR_RST)}} = qth {{REP(OWN_QTH)}} = name {{REP(OWN_NAME)}}' ],
             'REPEAT'     : [r'\?'                                      , '{{LAST_MSG}}'                                              ],
             'QRS'        : [r'qrs'                                     , 'slower'                                                    ],
             'QRQ'        : [r'qrq'                                     , 'faster'                                                    ],
             'QRZ'        : [r'qrz'                                     , '{{OWN_CALL | R(RPT)}}'                                     ],
-            'DEFAULT'    : [r'.'                                       , 'dr {{OP}} , hw cpy?'                                       ],
+            'DEFAULT'    : [r'.'                                       , '{{DR_OP()}} , hw cpy?'                                       ],
         }
     }
 
@@ -107,6 +115,9 @@ class QsoBot:
         self.memory = {}
         choosen_bot = QsoBot.mix_an_op(bot_characteristics)
         self.learn(choosen_bot)
+        
+        logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+        
         logging.info(f"QsoBot: init : {choosen_bot}")
         # logging.info(f"QsoBot: init : {self.memory}")
         
@@ -259,7 +270,7 @@ class QsoBot:
         return answer
 
     
-    def midi_qso(self,message):
+    def qso(self,message):
         """conduct a qso based on input from the remote op
         how it works:
         loop through input and split it into segments based on the break char
